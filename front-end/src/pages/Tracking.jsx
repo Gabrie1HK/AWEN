@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { parcels, trackingHistory } from '../data/mockData'
 import StepperTimeline from '../components/ui/StepperTimeline'
@@ -25,6 +26,14 @@ export default function Tracking() {
 
   return (
     <div className="tracking-page">
+      <div className="auth-back-row">
+        <Link to="/" className="auth-back-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          Volver al inicio
+        </Link>
+      </div>
       <div className="tracking-hero">
         <div className="tracking-hero-icon">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -71,14 +80,14 @@ export default function Tracking() {
             {history ? (
               <StepperTimeline steps={history} />
             ) : (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Historial no disponible</p>
+              <p className="tracking-muted-note">Historial no disponible</p>
             )}
           </div>
 
           {isInternal && (
-            <div style={{ marginTop: 'var(--space-md)', padding: 'var(--space-lg)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-lg)' }}>
-              <h4 style={{ marginBottom: 'var(--space-sm)' }}>Acciones Internas</h4>
-              <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
+            <div className="tracking-internal-panel">
+              <h4>Acciones Internas</h4>
+              <div className="tracking-internal-actions">
                 <button className="btn btn-outline">Actualizar Estado</button>
                 <button className="btn btn-outline">Agregar Nota</button>
                 <button className="btn btn-outline">Reasignar</button>
@@ -94,7 +103,7 @@ export default function Tracking() {
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
           </svg>
           <p>No se encontró ninguna encomienda con la guía <strong>{guide}</strong></p>
-          <p style={{ fontSize: '0.813rem', color: 'var(--text-muted)' }}>Verifica el número e intenta nuevamente</p>
+          <p className="tracking-muted-note">Verifica el número e intenta nuevamente</p>
         </div>
       )}
     </div>

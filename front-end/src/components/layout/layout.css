@@ -122,3 +122,28 @@
   .user-info { display: none; }
   .user-menu { padding: 6px; }
 }
+
+/* === App shell: tema claro (admin, operador, conductor) — navy + ember === */
+.app-shell-light {
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f8fafc;
+  --surface-base: #ffffff;
+  --surface-elevated: #f1f5f9;
+  --accent-primary: #f97316;
+  --accent-hover: #ea580c;
+  --accent-muted: rgba(249, 115, 22, 0.12);
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-tertiary: #94a3b8;
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-medium: #e2e8f0;
+  --border-strong: #cbd5e1;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+.app-shell-light .sidebar-brand-name {
+  color: #1e3a8a;
+}

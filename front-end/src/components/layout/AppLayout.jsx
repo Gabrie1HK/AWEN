@@ -13,7 +13,7 @@ export default function AppLayout() {
   if (!user) return <Navigate to="/login" replace />
 
   return (
-    <div className="app-layout">
+    <div className="app-layout app-shell-light">
       <Sidebar
         collapsed={sidebarCollapsed}
         open={sidebarOpen}

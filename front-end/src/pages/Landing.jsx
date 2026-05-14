@@ -43,14 +43,15 @@ const STEPS = [
 ]
 
 const TESTIMONIALS = [
-  { name: 'María Soto', role: 'Gerente de Operaciones', company: 'Distribuidora Sur Ltda.', quote: 'Redujimos nuestros tiempos de entrega en un 40% desde que implementamos AWEN. La trazabilidad es increíble.' },
-  { name: 'Carlos Muñoz', role: 'CEO', company: 'TechStore SpA', quote: 'El módulo de tracking nos ha permitido darle a nuestros clientes la transparencia que necesitaban. Altamente recomendado.' },
-  { name: 'Ana López', role: 'Jefa de Logística', company: 'Farmacias del Centro', quote: 'La interfaz es intuitiva y el equipo de soporte siempre responde rápido. Una herramienta que transformó nuestra logística.' },
+  { name: 'María Soto', role: 'Gerente de Operaciones', company: 'Distribuidora Los Andes, Valencia', quote: 'Redujimos nuestros tiempos de entrega en un 40% desde que implementamos AWEN. La trazabilidad es increíble.' },
+  { name: 'Carlos Muñoz', role: 'Director General', company: 'TechStore Venezuela, Caracas', quote: 'El módulo de tracking nos ha permitido darle a nuestros clientes la transparencia que necesitaban. Altamente recomendado.' },
+  { name: 'Ana López', role: 'Jefa de Logística', company: 'Cadena Fármaco Centro, Maracay', quote: 'La interfaz es intuitiva y el equipo de soporte siempre responde rápido. Una herramienta que transformó nuestra logística.' },
 ]
 
 const NAV_LINKS = [
   { label: 'Características', href: '#features' },
   { label: 'Cómo Funciona', href: '#how-it-works' },
+  { label: 'Precios', href: '#cta' },
   { label: 'Contacto', href: '#contact' },
 ]
 
@@ -110,7 +111,7 @@ function Hero() {
           <span className="text-gradient">con precisión quirúrgica</span>
         </h1>
         <p className="landing-hero-subtitle">
-          La plataforma todo-en-uno para empresas de mensajería y courier.
+          La plataforma todo-en-uno para empresas de mensajería y encomiendas en Venezuela.
           Desde el registro hasta la entrega, cada paso está controlado.
         </p>
         <div className="landing-hero-ctas">
@@ -176,7 +177,7 @@ function StatsBar() {
 
 function Features() {
   return (
-    <section id="features" className="landing-section landing-features">
+    <section id="features" className="landing-section landing-features landing-scroll-target">
       <div className="landing-section-header">
         <span className="landing-section-tag">Características</span>
         <h2>Todo lo que necesitas para gestionar tu operación</h2>
@@ -201,7 +202,7 @@ function Features() {
 
 function HowItWorks() {
   return (
-    <section id="how-it-works" className="landing-section landing-how">
+    <section id="how-it-works" className="landing-section landing-how landing-scroll-target">
       <div className="landing-section-header">
         <span className="landing-section-tag">Proceso</span>
         <h2>Así de simple funciona AWEN</h2>
@@ -252,7 +253,7 @@ function Testimonials() {
 function CtaSection() {
   const navigate = useNavigate()
   return (
-    <section className="landing-cta">
+    <section id="cta" className="landing-cta landing-scroll-target">
       <div className="landing-cta-bg">
         <div className="landing-cta-glow" />
       </div>
@@ -274,27 +275,27 @@ function CtaSection() {
 
 function Footer() {
   return (
-    <footer id="contact" className="landing-footer">
+    <footer id="contact" className="landing-footer landing-scroll-target">
       <div className="landing-footer-inner">
         <div className="landing-footer-brand">
           <div className="landing-logo">
             <div className="landing-logo-mark">A</div>
             <span className="landing-logo-text">AWEN</span>
           </div>
-          <p>Plataforma integral de gestión logística para empresas de mensajería y courier nacional.</p>
+          <p>Plataforma integral de gestión logística para empresas de mensajería y encomiendas a nivel nacional en Venezuela.</p>
         </div>
         <div className="landing-footer-links">
           <div className="landing-footer-col">
             <h4>Producto</h4>
             <a href="#features">Características</a>
             <a href="#how-it-works">Cómo Funciona</a>
-            <a href="#">Precios</a>
+            <a href="#cta">Precios</a>
           </div>
           <div className="landing-footer-col">
             <h4>Compañía</h4>
             <a href="#">Sobre Nosotros</a>
             <a href="#">Blog</a>
-            <a href="#">Contacto</a>
+            <a href="#contact">Contacto</a>
           </div>
           <div className="landing-footer-col">
             <h4>Soporte</h4>
@@ -302,11 +303,11 @@ function Footer() {
             <a href="#">Documentación API</a>
             <a href="#">Estado del Sistema</a>
           </div>
-          <div className="landing-footer-col">
+          <div className="landing-footer-col landing-footer-contact">
             <h4>Contacto</h4>
-            <span>+56 2 2123 4567</span>
-            <span>contacto@awen.cl</span>
-            <span>Av. Libertador 1234, Santiago</span>
+            <a href="tel:+584244504195">+58 (424) 450.4195</a>
+            <a href="mailto:AtencionCliente@awen.com">AtencionCliente@awen.com</a>
+            <span className="landing-footer-address">Municipio San Diego, Urb. Yuma II, Calle No. 3</span>
           </div>
         </div>
       </div>
