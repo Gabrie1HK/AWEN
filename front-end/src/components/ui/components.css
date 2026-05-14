@@ -42,7 +42,7 @@
   color: var(--text-primary);
 }
 .data-table tr:last-child td { border-bottom: none; }
-.data-table tr:hover td { background: rgba(255, 107, 0, 0.03); }
+.data-table tr:hover td { background: rgba(249, 115, 22, 0.06); }
 .data-table-pagination {
   display: flex; align-items: center; justify-content: center; gap: var(--space-md);
   padding: var(--space-md); border-top: 1px solid var(--border-medium);

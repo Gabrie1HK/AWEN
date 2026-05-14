@@ -28,6 +28,20 @@
   -webkit-font-smoothing: antialiased;
 }
 
+html:has(.landing-page) {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.landing-page) {
+    scroll-behavior: auto;
+  }
+}
+
+.landing-scroll-target {
+  scroll-margin-top: 88px;
+}
+
 /* === Navbar === */
 .landing-nav {
   position: fixed;
@@ -684,6 +698,12 @@
   text-decoration: none;
 }
 .landing-footer-col a:hover { color: var(--white); }
+.landing-footer-contact a {
+  word-break: break-word;
+}
+.landing-footer-address {
+  line-height: 1.5;
+}
 .landing-footer-bottom {
   max-width: 1200px;
   margin: 0 auto;
