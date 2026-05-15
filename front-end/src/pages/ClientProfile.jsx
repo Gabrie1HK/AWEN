@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { parcelsApi, usersApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
+import StepperTimeline from '../components/ui/StepperTimeline'
 
 export default function ClientProfile() {
   const { user } = useAuth()
@@ -10,6 +11,9 @@ export default function ClientProfile() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [selectedGuide, setSelectedGuide] = useState(null)
+  const [tracking, setTracking] = useState(null)
+  const [trackingLoading, setTrackingLoading] = useState(false)
 
   const fetchParcels = useCallback(async () => {
     try {
@@ -42,6 +46,20 @@ export default function ClientProfile() {
       setMessage('Error al guardar. Intente de nuevo.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleTrack = async (guide) => {
+    setSelectedGuide(guide)
+    setTrackingLoading(true)
+    setTracking(null)
+    try {
+      const data = await parcelsApi.tracking(guide)
+      setTracking(data)
+    } catch {
+      setTracking([])
+    } finally {
+      setTrackingLoading(false)
     }
   }
 
@@ -92,7 +110,7 @@ export default function ClientProfile() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {parcels.slice(0, 3).map(p => (
-                <div key={p.id} className="batch-card" style={{ padding: '12px' }}>
+                <div key={p.id} className="batch-card" style={{ padding: '12px', cursor: 'pointer' }} onClick={() => handleTrack(p.guide)}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>{p.guide}</strong>
                     <StatusBadge status={p.status} />
@@ -120,22 +138,48 @@ export default function ClientProfile() {
                 <th style={{ padding: '8px 12px' }}>Destino</th>
                 <th style={{ padding: '8px 12px' }}>Estado</th>
                 <th style={{ padding: '8px 12px' }}>Fecha</th>
+                <th style={{ padding: '8px 12px' }}></th>
               </tr>
             </thead>
             <tbody>
               {parcels.map(p => (
-                <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer' }} onClick={() => handleTrack(p.guide)}>
                   <td style={{ padding: '10px 12px', fontWeight: 600 }}>{p.guide}</td>
                   <td style={{ padding: '10px 12px' }}>{p.originBranch}</td>
                   <td style={{ padding: '10px 12px' }}>{p.destinationBranch}</td>
                   <td style={{ padding: '10px 12px' }}><StatusBadge status={p.status} /></td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{p.createdAt}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--accent-primary)' }}>
+                      <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      {selectedGuide && (
+        <div className="modal-overlay" onClick={() => setSelectedGuide(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+              <h3>Tracking: {selectedGuide}</h3>
+              <button className="btn-action" onClick={() => setSelectedGuide(null)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            {trackingLoading ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Cargando historial...</p>
+            ) : tracking && tracking.length > 0 ? (
+              <StepperTimeline steps={tracking} />
+            ) : (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Historial no disponible.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
