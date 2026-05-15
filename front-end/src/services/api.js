@@ -48,6 +48,7 @@ export const parcelsApi = {
   updateStatus: (id, status) => request(`/parcels/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) }),
   cancel: (id) => request(`/parcels/${id}/cancel`, { method: 'POST' }),
   tracking: (guide) => request(`/parcels/${guide}/tracking`),
+  myParcels: () => request('/parcels/my-parcels'),
 }
 
 export const trackingApi = {
@@ -111,6 +112,8 @@ export const usersApi = {
   create: (data) => request('/users', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => request(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   delete: (id) => request(`/users/${id}`, { method: 'DELETE' }),
+  me: () => request('/users/me'),
+  updateMe: (data) => request('/users/me', { method: 'PATCH', body: JSON.stringify(data) }),
 }
 
 export const branchesApi = {

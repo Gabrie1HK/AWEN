@@ -47,6 +47,13 @@ class ParcelService:
             items = [p for p in items if p.destination_branch == destination_branch]
         return paginate(items, page, page_size)
 
+    def list_by_user(self, user_name: str) -> List[ParcelPublic]:
+        lowered = user_name.lower()
+        return [
+            p for p in self._parcels.list()
+            if lowered in p.sender.lower() or lowered in p.recipient.lower()
+        ]
+
     def get(self, parcel_id: str) -> ParcelPublic:
         parcel = self._parcels.get(parcel_id)
         if not parcel:

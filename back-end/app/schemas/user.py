@@ -9,6 +9,8 @@ class UserPublic(AppBaseModel):
     email: str
     role: str
     branch: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
     active: bool = True
 
 

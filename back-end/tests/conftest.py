@@ -54,7 +54,7 @@ def parcel_service(parcel_repo, tracking_repo):
 def auth_token(client):
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": "admin@awen.cl", "password": "123456"},
+        json={"email": "admin@awen.com", "password": "123456"},
     )
     return response.json()["access_token"]
 

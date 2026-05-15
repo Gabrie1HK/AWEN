@@ -82,7 +82,7 @@ export default function UserManagement() {
               </div>
               <div className="form-field">
                 <label>Email</label>
-                <input type="email" placeholder="correo@awen.cl" defaultValue={editUser.email || ''} />
+                <input type="email" placeholder="correo@awen.com" defaultValue={editUser.email || ''} />
               </div>
               <div className="form-field">
                 <label>Rol</label>

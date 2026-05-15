@@ -15,9 +15,9 @@ export default function Login() {
     try {
       const user = await login(email, password)
       if (user) {
-        navigate(user.role === 'Client' ? '/tracking' : '/app/dashboard')
+        navigate(user.role === 'Client' ? '/app/mis-encomiendas' : '/app/dashboard')
       } else {
-        setError('Credenciales inválidas. Prueba: admin@awen.cl / 123456')
+        setError('Credenciales inválidas. Prueba: admin@awen.com / 123456')
       }
     } catch {
       setError('Error de conexión con el servidor')
@@ -44,7 +44,7 @@ export default function Login() {
             <label>Correo electrónico</label>
             <input
               type="email"
-              placeholder="admin@awen.cl"
+              placeholder="admin@awen.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
@@ -66,9 +66,9 @@ export default function Login() {
         </form>
         <div className="login-hint">
           <p>Credenciales de prueba:</p>
-          <code>admin@awen.cl / 123456</code>
-          <code>operador.carlos@awen.cl / 123456</code>
-          <code>conductor.pedro@awen.cl / 123456</code>
+          <code>admin@awen.com / 123456</code>
+          <code>operador.carlos@awen.com / 123456</code>
+          <code>conductor.pedro@awen.com / 123456</code>
           <code>juan@email.com / 123456</code>
         </div>
       </div>

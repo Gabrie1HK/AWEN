@@ -20,6 +20,8 @@ class UserBase(AppBaseModel):
     email: str
     role: UserRole
     branch: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
     active: bool = True
     last_login: Optional[str] = Field(default=None, alias="lastLogin")
 
@@ -33,6 +35,8 @@ class UserUpdate(AppBaseModel):
     email: Optional[str] = None
     role: Optional[UserRole] = None
     branch: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
     active: Optional[bool] = None
     last_login: Optional[str] = Field(default=None, alias="lastLogin")
     password: Optional[str] = None
