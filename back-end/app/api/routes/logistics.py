@@ -15,7 +15,7 @@ from app.services.logistics import LogisticsService
 router = APIRouter(prefix="/logistics", tags=["logistics"])
 
 
-@router.get("/batches", response_model=list[BatchPublic])
+@router.get("/batches", response_model=list[BatchPublic], summary="Listar lotes")
 def list_batches(
     page: int | None = Query(default=None, ge=1),
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
@@ -53,7 +53,7 @@ def update_batch(
     return service.update_batch(batch_id, payload)
 
 
-@router.post("/batches/{batch_id}/assign", response_model=BatchPublic)
+@router.post("/batches/{batch_id}/assign", response_model=BatchPublic, summary="Asignar lote a vehiculo")
 def assign_batch(
     batch_id: str,
     payload: BatchAssign,

@@ -1,0 +1,54 @@
+from __future__ import annotations
+
+
+class TestUsers:
+    def test_list_users(self, client, auth_headers):
+        response = client.get("/api/v1/users", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) >= 7
+
+    def test_list_users_filter_by_role(self, client, auth_headers):
+        response = client.get(
+            "/api/v1/users?role=Admin",
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert all(u["role"] == "Admin" for u in data)
+
+    def test_get_user(self, client, auth_headers):
+        response = client.get("/api/v1/users/1", headers=auth_headers)
+        assert response.status_code == 200
+        assert response.json()["name"] == "Admin Principal"
+
+    def test_create_user(self, client, auth_headers):
+        response = client.post(
+            "/api/v1/users",
+            headers=auth_headers,
+            json={
+                "name": "Test User",
+                "email": "test@awen.cl",
+                "role": "Warehouse Operator",
+                "branch": "Sucursal Central",
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["name"] == "Test User"
+        assert data["active"] is True
+
+    def test_update_user(self, client, auth_headers):
+        response = client.patch(
+            "/api/v1/users/1",
+            headers=auth_headers,
+            json={"name": "Admin Renamed"},
+        )
+        assert response.status_code == 200
+        assert response.json()["name"] == "Admin Renamed"
+
+    def test_delete_user_soft(self, client, auth_headers):
+        response = client.delete("/api/v1/users/1", headers=auth_headers)
+        assert response.status_code == 200
+        get_response = client.get("/api/v1/users/1", headers=auth_headers)
+        assert get_response.json()["active"] is False

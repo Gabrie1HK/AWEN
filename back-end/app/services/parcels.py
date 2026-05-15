@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from app.core.errors import NotFoundError
+from app.core.errors import NotFoundError, ValidationError
 from app.core.pagination import paginate
 from app.repositories.parcels import ParcelRepository, TrackingRepository
 from app.schemas.parcel import (
@@ -60,7 +60,7 @@ class ParcelService:
         return parcel
 
     def create(self, payload: ParcelCreate) -> ParcelPublic:
-        now = datetime.utcnow().date().isoformat()
+        now = datetime.now(timezone.utc).date().isoformat()
         next_id = self._next_parcel_id()
         guide = self._next_guide_number()
         parcel = ParcelPublic(
@@ -85,7 +85,7 @@ class ParcelService:
         if not updated:
             raise NotFoundError("Encomienda no encontrada")
         data = updated.model_dump(by_alias=True)
-        data["updatedAt"] = datetime.utcnow().date().isoformat()
+        data["updatedAt"] = datetime.now(timezone.utc).date().isoformat()
         refreshed = ParcelPublic(**data)
         self._parcels.create(refreshed)
         return refreshed
@@ -94,11 +94,12 @@ class ParcelService:
         existing = self._parcels.get(parcel_id)
         if not existing:
             raise NotFoundError("Encomienda no encontrada")
+        self._validate_status_transition(existing.status, status_update.status)
         updated = self._parcels.update_status(parcel_id, status_update.status)
         if not updated:
             raise NotFoundError("Encomienda no encontrada")
         data = updated.model_dump(by_alias=True)
-        data["updatedAt"] = datetime.utcnow().date().isoformat()
+        data["updatedAt"] = datetime.now(timezone.utc).date().isoformat()
         refreshed = ParcelPublic(**data)
         self._parcels.create(refreshed)
         history = self._tracking.list_by_guide(existing.guide)
@@ -133,7 +134,7 @@ class ParcelService:
 
     def _default_tracking(self, guide: str) -> List[TrackingEvent]:
         return [
-            TrackingEvent(step=ParcelStatus.REGISTERED, date=datetime.utcnow().date().isoformat(), completed=True),
+            TrackingEvent(step=ParcelStatus.REGISTERED, date=datetime.now(timezone.utc).date().isoformat(), completed=True),
             TrackingEvent(step=ParcelStatus.PICKED_UP, completed=False),
             TrackingEvent(step=ParcelStatus.IN_TRANSIT, completed=False),
             TrackingEvent(step=ParcelStatus.AT_DESTINATION_BRANCH, completed=False),
@@ -156,8 +157,8 @@ class ParcelService:
         if status not in ordered and status != ParcelStatus.RETURNED:
             return history
 
-        current_date = datetime.utcnow().date().isoformat()
-        current_time = datetime.utcnow().time().strftime("%H:%M")
+        current_date = datetime.now(timezone.utc).date().isoformat()
+        current_time = datetime.now(timezone.utc).time().strftime("%H:%M")
 
         if status == ParcelStatus.RETURNED:
             updated = []
@@ -201,3 +202,52 @@ class ParcelService:
             else:
                 updated.append(step)
         return updated
+
+    def _validate_status_transition(self, current: ParcelStatus, new: ParcelStatus) -> None:
+        if current == new:
+            return
+
+        ordered = [
+            ParcelStatus.REGISTERED,
+            ParcelStatus.PICKED_UP,
+            ParcelStatus.IN_TRANSIT,
+            ParcelStatus.AT_DESTINATION_BRANCH,
+            ParcelStatus.OUT_FOR_DELIVERY,
+            ParcelStatus.DELIVERED,
+        ]
+
+        terminal = {ParcelStatus.DELIVERED, ParcelStatus.RETURNED}
+
+        if current in terminal:
+            raise ValidationError(
+                f"No se puede cambiar el estado de {current.value}: es un estado terminal",
+                detail={"current": current.value, "new": new.value},
+            )
+
+        if new == ParcelStatus.RETURNED:
+            return
+
+        if current not in ordered or new not in ordered:
+            raise ValidationError(
+                f"Transicion invalida de {current.value} a {new.value}",
+                detail={"current": current.value, "new": new.value},
+            )
+
+        current_idx = ordered.index(current)
+        new_idx = ordered.index(new)
+
+        if new_idx <= current_idx:
+            raise ValidationError(
+                f"No se puede retroceder de {current.value} a {new.value}",
+                detail={"current": current.value, "new": new.value},
+            )
+
+        if new_idx > current_idx + 1:
+            raise ValidationError(
+                f"No se puede saltar de {current.value} a {new.value}. Debe pasar por {ordered[current_idx + 1].value}",
+                detail={
+                    "current": current.value,
+                    "new": new.value,
+                    "next_valid": ordered[current_idx + 1].value,
+                },
+            )
