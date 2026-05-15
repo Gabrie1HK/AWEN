@@ -20,6 +20,23 @@ def list_users(
     return service.list(search=search, role=role, page=page, page_size=page_size)
 
 
+@router.get("/me", response_model=UserPublic, summary="Mi perfil")
+def get_my_profile(
+    user=Depends(get_current_user),
+    service: UserManagementService = Depends(get_user_management_service),
+) -> UserPublic:
+    return service.get(user.id)
+
+
+@router.patch("/me", response_model=UserPublic, summary="Actualizar mi perfil")
+def update_my_profile(
+    payload: UserUpdate,
+    user=Depends(get_current_user),
+    service: UserManagementService = Depends(get_user_management_service),
+) -> UserPublic:
+    return service.update(user.id, payload)
+
+
 @router.get("/{user_id}", response_model=UserPublic)
 def get_user(
     user_id: int,

@@ -30,6 +30,14 @@ def list_parcels(
     )
 
 
+@router.get("/my-parcels", response_model=list[ParcelPublic], summary="Mis encomiendas (cliente)")
+def my_parcels(
+    service: ParcelService = Depends(get_parcel_service),
+    user=Depends(get_current_user),
+) -> list[ParcelPublic]:
+    return service.list_by_user(user.name)
+
+
 @router.get("/{parcel_id}", response_model=ParcelPublic)
 def get_parcel(
     parcel_id: str,

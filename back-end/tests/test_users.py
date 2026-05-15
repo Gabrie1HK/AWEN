@@ -28,7 +28,7 @@ class TestUsers:
             headers=auth_headers,
             json={
                 "name": "Test User",
-                "email": "test@awen.cl",
+                "email": "test@awen.com",
                 "role": "Warehouse Operator",
                 "branch": "Sucursal Central",
             },

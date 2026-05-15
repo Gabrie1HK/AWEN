@@ -12,6 +12,7 @@ import ProofOfDelivery from './pages/ProofOfDelivery'
 import Reports from './pages/Reports'
 import UserManagement from './pages/UserManagement'
 import BranchManagement from './pages/BranchManagement'
+import ClientProfile from './pages/ClientProfile'
 import './components/ui/components.css'
 import './pages/pages.css'
 
@@ -46,6 +47,8 @@ export default function App() {
             <Route path="reportes" element={<ProtectedRoute path="/app/reportes"><Reports /></ProtectedRoute>} />
             <Route path="usuarios" element={<ProtectedRoute path="/app/usuarios"><UserManagement /></ProtectedRoute>} />
             <Route path="sucursales" element={<ProtectedRoute path="/app/sucursales"><BranchManagement /></ProtectedRoute>} />
+            <Route path="mis-encomiendas" element={<ProtectedRoute path="/app/mis-encomiendas"><ClientProfile /></ProtectedRoute>} />
+            <Route path="perfil" element={<ProtectedRoute path="/app/perfil"><ClientProfile /></ProtectedRoute>} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

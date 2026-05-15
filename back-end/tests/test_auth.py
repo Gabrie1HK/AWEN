@@ -4,19 +4,19 @@ from __future__ import annotations
 def test_login_success(client):
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": "admin@awen.cl", "password": "123456"},
+        json={"email": "admin@awen.com", "password": "123456"},
     )
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
     assert data["token_type"] == "bearer"
-    assert data["user"]["email"] == "admin@awen.cl"
+    assert data["user"]["email"] == "admin@awen.com"
 
 
 def test_login_invalid_credentials(client):
     response = client.post(
         "/api/v1/auth/login",
-        json={"email": "admin@awen.cl", "password": "wrong"},
+        json={"email": "admin@awen.com", "password": "wrong"},
     )
     assert response.status_code == 401
 
@@ -35,7 +35,7 @@ def test_me_with_valid_token(client, auth_token):
         headers={"Authorization": f"Bearer {auth_token}"},
     )
     assert response.status_code == 200
-    assert response.json()["email"] == "admin@awen.cl"
+    assert response.json()["email"] == "admin@awen.com"
 
 
 def test_me_without_token(client):
