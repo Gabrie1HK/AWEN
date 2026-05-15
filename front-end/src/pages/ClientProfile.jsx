@@ -1,66 +1,35 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { parcelsApi, usersApi } from '../services/api'
+import { parcels as mockParcels, trackingHistory as mockHistory } from '../data/mockData'
 import StatusBadge from '../components/ui/StatusBadge'
 import StepperTimeline from '../components/ui/StepperTimeline'
 
 export default function ClientProfile() {
   const { user } = useAuth()
-  const [parcels, setParcels] = useState([])
-  const [profile, setProfile] = useState({ name: '', phone: '', address: '' })
+  const [profile, setProfile] = useState({
+    name: user?.name || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
+  })
   const [editing, setEditing] = useState(false)
-  const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [selectedGuide, setSelectedGuide] = useState(null)
   const [tracking, setTracking] = useState(null)
-  const [trackingLoading, setTrackingLoading] = useState(false)
 
-  const fetchParcels = useCallback(async () => {
-    try {
-      const data = await parcelsApi.myParcels()
-      setParcels(data)
-    } catch {
-      setParcels([])
-    }
-  }, [])
+  const myParcels = mockParcels.filter(p =>
+    p.sender.toLowerCase().includes(user?.name?.toLowerCase() || '') ||
+    p.recipient.toLowerCase().includes(user?.name?.toLowerCase() || '')
+  )
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      const data = await usersApi.me()
-      setProfile({ name: data.name, phone: data.phone || '', address: data.address || '' })
-    } catch {
-      if (user) setProfile({ name: user.name, phone: user.phone || '', address: user.address || '' })
-    }
-  }, [user])
-
-  useEffect(() => { fetchParcels(); fetchProfile() }, [fetchParcels, fetchProfile])
-
-  const handleSave = async () => {
-    setSaving(true)
-    setMessage('')
-    try {
-      await usersApi.updateMe({ name: profile.name, phone: profile.phone, address: profile.address })
-      setMessage('Datos actualizados correctamente')
-      setEditing(false)
-    } catch {
-      setMessage('Error al guardar. Intente de nuevo.')
-    } finally {
-      setSaving(false)
-    }
+  const handleSave = () => {
+    setMessage('Datos actualizados correctamente')
+    setEditing(false)
+    setTimeout(() => setMessage(''), 3000)
   }
 
-  const handleTrack = async (guide) => {
+  const handleTrack = (guide) => {
     setSelectedGuide(guide)
-    setTrackingLoading(true)
-    setTracking(null)
-    try {
-      const data = await parcelsApi.tracking(guide)
-      setTracking(data)
-    } catch {
-      setTracking([])
-    } finally {
-      setTrackingLoading(false)
-    }
+    setTracking(mockHistory[guide] || null)
   }
 
   return (
@@ -94,10 +63,10 @@ export default function ClientProfile() {
                 <label>Direccion</label>
                 <input type="text" value={profile.address} onChange={e => setProfile({ ...profile, address: e.target.value })} placeholder="Calle, ciudad" />
               </div>
-              {message && <p style={{ color: message.includes('Error') ? 'var(--status-returned)' : 'var(--status-delivered)', fontSize: '0.875rem' }}>{message}</p>}
+              {message && <p style={{ color: 'var(--status-delivered)', fontSize: '0.875rem' }}>{message}</p>}
               <div className="modal-actions" style={{ marginTop: 8 }}>
                 <button className="btn btn-outline" onClick={() => { setEditing(false); setMessage('') }}>Cancelar</button>
-                <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>
+                <button className="btn btn-primary" onClick={handleSave}>Guardar</button>
               </div>
             </div>
           )}
@@ -105,11 +74,11 @@ export default function ClientProfile() {
 
         <div className="chart-card">
           <h3 style={{ marginBottom: 'var(--space-md)' }}>Envio Reciente</h3>
-          {parcels.length === 0 ? (
+          {myParcels.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No tienes envios registrados.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {parcels.slice(0, 3).map(p => (
+              {myParcels.slice(0, 3).map(p => (
                 <div key={p.id} className="batch-card" style={{ padding: '12px', cursor: 'pointer' }} onClick={() => handleTrack(p.guide)}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>{p.guide}</strong>
@@ -127,12 +96,12 @@ export default function ClientProfile() {
 
       <div className="chart-card">
         <h3 style={{ marginBottom: 'var(--space-md)' }}>Historial de Envios</h3>
-        {parcels.length === 0 ? (
+        {myParcels.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No tienes envios registrados.</p>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', fontSize: '0.813rem', color: 'var(--text-secondary)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-medium)', textAlign: 'left', fontSize: '0.813rem', color: 'var(--text-secondary)' }}>
                 <th style={{ padding: '8px 12px' }}>Guia</th>
                 <th style={{ padding: '8px 12px' }}>Origen</th>
                 <th style={{ padding: '8px 12px' }}>Destino</th>
@@ -142,8 +111,8 @@ export default function ClientProfile() {
               </tr>
             </thead>
             <tbody>
-              {parcels.map(p => (
-                <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer' }} onClick={() => handleTrack(p.guide)}>
+              {myParcels.map(p => (
+                <tr key={p.id} style={{ borderBottom: '1px solid var(--border-medium)', cursor: 'pointer' }} onClick={() => handleTrack(p.guide)}>
                   <td style={{ padding: '10px 12px', fontWeight: 600 }}>{p.guide}</td>
                   <td style={{ padding: '10px 12px' }}>{p.originBranch}</td>
                   <td style={{ padding: '10px 12px' }}>{p.destinationBranch}</td>
@@ -170,9 +139,7 @@ export default function ClientProfile() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
-            {trackingLoading ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Cargando historial...</p>
-            ) : tracking && tracking.length > 0 ? (
+            {tracking && tracking.length > 0 ? (
               <StepperTimeline steps={tracking} />
             ) : (
               <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Historial no disponible.</p>
