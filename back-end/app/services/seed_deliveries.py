@@ -13,7 +13,7 @@ def seed_deliveries() -> list[DeliveryPublic]:
             status=DeliveryStatus.COMPLETED,
             signatureData=None,
             photoUrl=None,
-            gps="-36.8269, -73.0499",
+            gps="8.3519, -62.6414",
         ),
         DeliveryPublic(
             id="DEL-002",
@@ -25,7 +25,7 @@ def seed_deliveries() -> list[DeliveryPublic]:
             status=DeliveryStatus.PENDING,
             signatureData=None,
             photoUrl=None,
-            gps="-23.6509, -70.3975",
+            gps="10.6312, -71.6404",
         ),
         DeliveryPublic(
             id="DEL-003",
@@ -37,6 +37,6 @@ def seed_deliveries() -> list[DeliveryPublic]:
             status=DeliveryStatus.PENDING,
             signatureData=None,
             photoUrl=None,
-            gps="-33.0472, -71.6127",
+            gps="10.2442, -67.5917",
         ),
     ]

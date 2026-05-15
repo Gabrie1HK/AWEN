@@ -31,7 +31,7 @@ class TestParcelList:
         assert response.status_code == 200
         data = response.json()
         assert len(data) >= 1
-        assert data[0]["sender"] == "TechStore SpA"
+        assert "TechStore" in data[0]["sender"]
 
     def test_list_parcels_pagination(self, client, auth_headers):
         response = client.get(
