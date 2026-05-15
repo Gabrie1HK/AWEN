@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { parcelsApi, deliveriesApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import StepperTimeline from '../components/ui/StepperTimeline'
 
@@ -17,7 +16,7 @@ const MOCK_PARCELS = [
   { id: 'ENV-006', guide: 'AWEN-2026-0006', sender: 'Moda Urbana CA', recipient: 'Daniela Rojas', originBranch: 'Sucursal Central', destinationBranch: 'Sucursal Sur', status: 'In Transit', description: 'Ropa y accesorios', createdAt: '2026-05-11', recipientAddress: 'Av. Andres Bello 890, Barquisimeto' },
 ]
 
-const MOCK_HISTORY = {
+const MOCK_HISTORY_BASE = {
   'AWEN-2026-0001': [
     { step: 'Registered', date: '2026-05-10', time: '14:30', location: 'Sucursal Central', operator: 'Operador Carlos', completed: true },
     { step: 'Picked Up', date: '2026-05-10', time: '16:00', location: 'Sucursal Central', operator: 'Conductor Pedro', completed: true },
@@ -31,59 +30,47 @@ const MOCK_HISTORY = {
 
 export default function DriverDashboard() {
   const { user } = useAuth()
-  const [parcels, setParcels] = useState([])
+  const [parcels, setParcels] = useState(MOCK_PARCELS)
   const [selected, setSelected] = useState(null)
   const [tracking, setTracking] = useState(null)
   const [newStatus, setNewStatus] = useState('')
   const [note, setNote] = useState('')
   const [notes, setNotes] = useState({})
   const [msg, setMsg] = useState('')
+  const [history, setHistory] = useState(MOCK_HISTORY_BASE)
 
-  useEffect(() => {
-    parcelsApi.myParcels()
-      .then(setParcels)
-      .catch(() => setParcels(MOCK_PARCELS))
-  }, [])
-
-  const handleView = async (p) => {
+  const handleView = (p) => {
     setSelected(p)
     setNewStatus('')
     setNote('')
     setMsg('')
-    try {
-      const data = await parcelsApi.tracking(p.guide)
-      setTracking(data)
-    } catch {
-      setTracking(MOCK_HISTORY[p.guide] || [])
-    }
+    setTracking(history[p.guide] || [])
   }
 
-  const handleUpdateStatus = async () => {
+  const handleUpdateStatus = () => {
     if (!newStatus) return
-    try {
-      await parcelsApi.updateStatus(selected.id, newStatus)
-      parcelsApi.tracking(selected.guide).then(setTracking).catch(() => {})
-      setParcels(prev => prev.map(p => p.id === selected.id ? { ...p, status: newStatus } : p))
-      setSelected(prev => ({ ...prev, status: newStatus }))
-      setMsg('Estado actualizado correctamente')
-    } catch {
-      setParcels(prev => prev.map(p => p.id === selected.id ? { ...p, status: newStatus } : p))
-      const updated = [...(MOCK_HISTORY[selected.guide] || [])]
-      updated.push({ step: newStatus, date: '2026-05-15', time: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }), location: 'En ruta', operator: user?.name, completed: true })
-      MOCK_HISTORY[selected.guide] = updated
-      setTracking(updated)
-      setParcels(prev => prev.map(p => p.id === selected.id ? { ...p, status: newStatus } : p))
-      setSelected(prev => ({ ...prev, status: newStatus }))
-      setMsg('Estado actualizado (sin conexion al servidor)')
-    }
+    const guide = selected.guide
+    const updatedHistory = [...(history[guide] || [])]
+    updatedHistory.push({
+      step: newStatus,
+      date: '2026-05-15',
+      time: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
+      location: 'En ruta',
+      operator: user?.name || 'Conductor',
+      completed: true,
+    })
+    setHistory({ ...history, [guide]: updatedHistory })
+    setTracking(updatedHistory)
+    setParcels(prev => prev.map(p => p.id === selected.id ? { ...p, status: newStatus } : p))
+    setSelected(prev => ({ ...prev, status: newStatus }))
+    setMsg('Estado actualizado correctamente')
   }
 
   const handleAddNote = () => {
     if (!note.trim()) return
     const key = selected.guide
     const existing = notes[key] || []
-    const updated = [...existing, { text: note, date: new Date().toLocaleDateString(), by: user?.name }]
-    setNotes({ ...notes, [key]: updated })
+    setNotes({ ...notes, [key]: [...existing, { text: note, date: new Date().toLocaleDateString(), by: user?.name }] })
     setNote('')
     setMsg('Notificacion agregada')
   }
@@ -97,34 +84,30 @@ export default function DriverDashboard() {
 
       {!selected ? (
         <div className="chart-card">
-          {parcels.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No tienes entregas asignadas.</p>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left', fontSize: '0.813rem', color: 'var(--text-secondary)' }}>
-                  <th style={{ padding: '8px 12px' }}>Guia</th>
-                  <th style={{ padding: '8px 12px' }}>Destinatario</th>
-                  <th style={{ padding: '8px 12px' }}>Ruta</th>
-                  <th style={{ padding: '8px 12px' }}>Estado</th>
-                  <th style={{ padding: '8px 12px' }}></th>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-medium)', textAlign: 'left', fontSize: '0.813rem', color: 'var(--text-secondary)' }}>
+                <th style={{ padding: '8px 12px' }}>Guia</th>
+                <th style={{ padding: '8px 12px' }}>Destinatario</th>
+                <th style={{ padding: '8px 12px' }}>Ruta</th>
+                <th style={{ padding: '8px 12px' }}>Estado</th>
+                <th style={{ padding: '8px 12px' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {parcels.map(p => (
+                <tr key={p.id} style={{ borderBottom: '1px solid var(--border-medium)' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>{p.guide}</td>
+                  <td style={{ padding: '10px 12px' }}>{p.recipient}</td>
+                  <td style={{ padding: '10px 12px', fontSize: '0.875rem' }}>{p.originBranch} → {p.destinationBranch}</td>
+                  <td style={{ padding: '10px 12px' }}><StatusBadge status={p.status} /></td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <button className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '4px 10px' }} onClick={() => handleView(p)}>Gestionar</button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {parcels.map(p => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '10px 12px', fontWeight: 600 }}>{p.guide}</td>
-                    <td style={{ padding: '10px 12px' }}>{p.recipient}</td>
-                    <td style={{ padding: '10px 12px', fontSize: '0.875rem' }}>{p.originBranch} → {p.destinationBranch}</td>
-                    <td style={{ padding: '10px 12px' }}><StatusBadge status={p.status} /></td>
-                    <td style={{ padding: '10px 12px' }}>
-                      <button className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '4px 10px' }} onClick={() => handleView(p)}>Gestionar</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
@@ -157,13 +140,11 @@ export default function DriverDashboard() {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <select value={newStatus} onChange={e => setNewStatus(e.target.value)} style={{ flex: 1, minWidth: 150 }}>
                   <option value="">Seleccionar...</option>
-                  {STATUS_OPTIONS.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                  {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
                 <button className="btn btn-primary" onClick={handleUpdateStatus} disabled={!newStatus}>Actualizar</button>
               </div>
-              {msg && <p style={{ marginTop: 8, fontSize: '0.813rem', color: msg.includes('Error') ? 'var(--status-returned)' : 'var(--status-delivered)' }}>{msg}</p>}
+              {msg && <p style={{ marginTop: 8, fontSize: '0.813rem', color: 'var(--status-delivered)' }}>{msg}</p>}
             </div>
             <div className="chart-card">
               <h4 style={{ marginBottom: 12 }}>Agregar Notificacion</h4>
