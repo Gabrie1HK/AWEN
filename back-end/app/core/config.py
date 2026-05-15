@@ -10,6 +10,7 @@ class AppSettings(BaseSettings):
     project_name: str = "AWEN API"
     version: str = "0.1.0"
     api_v1_prefix: str = "/api/v1"
+    debug: bool = False
 
     secret_key: str = "change-this-secret"
     jwt_algorithm: str = "HS256"
@@ -22,6 +23,10 @@ class AppSettings(BaseSettings):
     cors_allow_credentials: bool = True
     cors_allow_methods: List[str] = ["*"]
     cors_allow_headers: List[str] = ["*"]
+
+    upload_dir: str = "uploads"
+    rate_limit_max: int = 100
+    rate_limit_window: int = 60
 
 
 @lru_cache

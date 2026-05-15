@@ -16,11 +16,12 @@ from app.services.reports import ReportService
 router = APIRouter(prefix="/reports", tags=["reports"])
 
 
-@router.get("/kpis", response_model=KPIResponse)
+@router.get("/kpis", response_model=KPIResponse, summary="KPIs principales")
 def report_kpis(
     service: ReportService = Depends(get_report_service),
     _user=Depends(get_current_user),
 ) -> KPIResponse:
+    """Devuelve total de envios, en transito, entregados y devueltos."""
     return service.kpis()
 
 
@@ -64,7 +65,7 @@ def top_routes(
     return service.top_routes()
 
 
-@router.get("/export", response_class=PlainTextResponse)
+@router.get("/export", response_class=PlainTextResponse, summary="Exportar CSV")
 def export_csv(
     format: str = Query(default="csv"),
     service: ReportService = Depends(get_report_service),

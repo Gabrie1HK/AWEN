@@ -9,11 +9,12 @@ from app.services.parcels import ParcelService
 router = APIRouter(prefix="/tracking", tags=["tracking"])
 
 
-@router.get("/{guide}", response_model=PublicTrackingResponse)
+@router.get("/{guide}", response_model=PublicTrackingResponse, summary="Tracking publico por guia")
 def public_tracking(
     guide: str,
     service: ParcelService = Depends(get_parcel_service),
 ) -> PublicTrackingResponse:
+    """Busca una encomienda por numero de guia y devuelve su estado e historial. No requiere autenticacion."""
     try:
         parcel = service.get_by_guide(guide)
     except Exception:

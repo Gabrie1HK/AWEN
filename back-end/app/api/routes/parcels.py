@@ -9,7 +9,7 @@ from app.services.parcels import ParcelService
 router = APIRouter(prefix="/parcels", tags=["parcels"])
 
 
-@router.get("", response_model=list[ParcelPublic])
+@router.get("", response_model=list[ParcelPublic], summary="Listar encomiendas")
 def list_parcels(
     search: str | None = None,
     status: ParcelStatus | None = None,
@@ -39,7 +39,7 @@ def get_parcel(
     return service.get(parcel_id)
 
 
-@router.post("", response_model=ParcelPublic)
+@router.post("", response_model=ParcelPublic, summary="Crear encomienda")
 def create_parcel(
     payload: ParcelCreate,
     service: ParcelService = Depends(get_parcel_service),

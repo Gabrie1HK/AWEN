@@ -22,3 +22,8 @@ class UnauthorizedError(AppError):
 class ForbiddenError(AppError):
     def __init__(self, message: str, detail: dict | None = None) -> None:
         super().__init__(status.HTTP_403_FORBIDDEN, message, detail)
+
+
+class ValidationError(AppError):
+    def __init__(self, message: str, detail: dict | None = None) -> None:
+        super().__init__(status.HTTP_422_UNPROCESSABLE_CONTENT, message, detail)

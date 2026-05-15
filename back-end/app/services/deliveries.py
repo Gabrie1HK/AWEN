@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.errors import NotFoundError
 from app.core.pagination import paginate
@@ -36,7 +36,7 @@ class DeliveryService:
             signatureData=payload.signature_data,
             photoUrl=payload.photo_url,
             gps=payload.gps,
-            deliveryDate=payload.delivery_date or datetime.utcnow().date().isoformat(),
+            deliveryDate=payload.delivery_date or datetime.now(timezone.utc).date().isoformat(),
             status=DeliveryStatus.COMPLETED,
         )
         return self.update(delivery_id, update)
