@@ -1,11 +1,11 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { AuthContext } from './constants'
-import { authApi, setAuthToken } from '../services/api'
+import { authApi, setAuthToken, getAuthToken } from '../services/api'
 
 const ROUTE_PERMISSIONS = {
   Admin: ['/app/dashboard', '/app/encomiendas', '/app/logistica', '/app/comprobantes', '/app/reportes', '/app/usuarios', '/app/sucursales'],
   'Warehouse Operator': ['/app/dashboard', '/app/encomiendas', '/app/logistica', '/app/comprobantes'],
-  Driver: ['/app/dashboard', '/app/comprobantes'],
+  Driver: ['/app/dashboard', '/app/mis-entregas', '/app/comprobantes'],
   Client: ['/app/mis-encomiendas', '/app/perfil'],
 }
 
@@ -16,8 +16,32 @@ const MOCK_USERS = {
   'juan@email.com': { id: 6, name: 'Cliente Juan', email: 'juan@email.com', role: 'Client', branch: '-', phone: '+58 412 789 0123', address: 'Calle 60 123, Merida', avatar: null },
 }
 
+function loadSession() {
+  try {
+    const saved = localStorage.getItem('awen_session')
+    if (saved) {
+      const { user: savedUser, token } = JSON.parse(saved)
+      if (savedUser && token) {
+        setAuthToken(token)
+        return savedUser
+      }
+    }
+  } catch {}
+  return null
+}
+
+function saveSession(user, token) {
+  try {
+    localStorage.setItem('awen_session', JSON.stringify({ user, token: token || getAuthToken() }))
+  } catch {}
+}
+
+function clearSession() {
+  try { localStorage.removeItem('awen_session') } catch {}
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(loadSession)
 
   const login = useCallback(async (email, password) => {
     try {
@@ -25,11 +49,13 @@ export function AuthProvider({ children }) {
       setAuthToken(data.access_token)
       const userData = { ...data.user, avatar: null }
       setUser(userData)
+      saveSession(userData, data.access_token)
       return userData
     } catch {
       const found = MOCK_USERS[email]
       if (found && password === '123456') {
         setUser(found)
+        saveSession(found, null)
         return found
       }
       return null
@@ -39,6 +65,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     setAuthToken(null)
     setUser(null)
+    clearSession()
   }, [])
 
   const canAccess = useCallback((path) => {
@@ -47,11 +74,17 @@ export function AuthProvider({ children }) {
     return allowed.includes(path)
   }, [user])
 
+  useEffect(() => {
+    if (user) {
+      saveSession(user, null)
+    } else {
+      clearSession()
+    }
+  }, [user])
+
   return (
     <AuthContext.Provider value={{ user, login, logout, canAccess }}>
       {children}
     </AuthContext.Provider>
   )
 }
-
-

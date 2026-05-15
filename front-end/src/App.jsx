@@ -13,6 +13,7 @@ import Reports from './pages/Reports'
 import UserManagement from './pages/UserManagement'
 import BranchManagement from './pages/BranchManagement'
 import ClientProfile from './pages/ClientProfile'
+import DriverDashboard from './pages/DriverDashboard'
 import './components/ui/components.css'
 import './pages/pages.css'
 
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="usuarios" element={<ProtectedRoute path="/app/usuarios"><UserManagement /></ProtectedRoute>} />
             <Route path="sucursales" element={<ProtectedRoute path="/app/sucursales"><BranchManagement /></ProtectedRoute>} />
             <Route path="mis-encomiendas" element={<ProtectedRoute path="/app/mis-encomiendas"><ClientProfile /></ProtectedRoute>} />
+            <Route path="mis-entregas" element={<ProtectedRoute path="/app/mis-entregas"><DriverDashboard /></ProtectedRoute>} />
             <Route path="perfil" element={<ProtectedRoute path="/app/perfil"><ClientProfile /></ProtectedRoute>} />
           </Route>
 
