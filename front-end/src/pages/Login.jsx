@@ -9,14 +9,18 @@ export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    const user = login(email, password)
-    if (user) {
-      navigate(user.role === 'Client' ? '/tracking' : '/app/dashboard')
-    } else {
-      setError('Credenciales inválidas. Prueba: admin@awen.cl / 123456')
+    try {
+      const user = await login(email, password)
+      if (user) {
+        navigate(user.role === 'Client' ? '/tracking' : '/app/dashboard')
+      } else {
+        setError('Credenciales inválidas. Prueba: admin@awen.cl / 123456')
+      }
+    } catch {
+      setError('Error de conexión con el servidor')
     }
   }
 

@@ -18,19 +18,23 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 @router.get("/kpis", response_model=KPIResponse, summary="KPIs principales")
 def report_kpis(
+    date_from: str | None = Query(default=None, alias="dateFrom"),
+    date_to: str | None = Query(default=None, alias="dateTo"),
     service: ReportService = Depends(get_report_service),
     _user=Depends(get_current_user),
 ) -> KPIResponse:
     """Devuelve total de envios, en transito, entregados y devueltos."""
-    return service.kpis()
+    return service.kpis(date_from=date_from, date_to=date_to)
 
 
 @router.get("/daily-volume", response_model=list[DailyShipmentPoint])
 def daily_volume(
+    date_from: str | None = Query(default=None, alias="dateFrom"),
+    date_to: str | None = Query(default=None, alias="dateTo"),
     service: ReportService = Depends(get_report_service),
     _user=Depends(get_current_user),
 ) -> list[DailyShipmentPoint]:
-    return service.daily_shipments()
+    return service.daily_shipments(date_from=date_from, date_to=date_to)
 
 
 @router.get("/deliveries-by-branch", response_model=list[BranchDeliveryPoint])

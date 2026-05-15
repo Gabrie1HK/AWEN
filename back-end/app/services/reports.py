@@ -21,10 +21,10 @@ from app.services.seed_reports import (
 
 
 class ReportService:
-    def kpis(self) -> KPIResponse:
+    def kpis(self, date_from: str | None = None, date_to: str | None = None) -> KPIResponse:
         return seed_dashboard_kpis()
 
-    def daily_shipments(self) -> list[DailyShipmentPoint]:
+    def daily_shipments(self, date_from: str | None = None, date_to: str | None = None) -> list[DailyShipmentPoint]:
         return seed_daily_shipments()
 
     def deliveries_by_branch(self) -> list[BranchDeliveryPoint]:
