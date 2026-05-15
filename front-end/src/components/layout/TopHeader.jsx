@@ -11,6 +11,7 @@ const PAGE_TITLES = {
   '/app/usuarios': 'Gestión de Usuarios',
   '/app/sucursales': 'Gestión de Sucursales',
   '/app/mis-encomiendas': 'Mis Encomiendas',
+  '/app/mis-entregas': 'Mis Entregas',
   '/app/perfil': 'Mi Perfil',
   '/tracking': 'Tracking de Envíos',
 }

@@ -15,7 +15,8 @@ export default function Login() {
     try {
       const user = await login(email, password)
       if (user) {
-        navigate(user.role === 'Client' ? '/app/mis-encomiendas' : '/app/dashboard')
+        const route = user.role === 'Client' ? '/app/mis-encomiendas' : user.role === 'Driver' ? '/app/mis-entregas' : '/app/dashboard'
+        navigate(route)
       } else {
         setError('Credenciales inválidas. Prueba: admin@awen.com / 123456')
       }
