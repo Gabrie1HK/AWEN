@@ -3,16 +3,21 @@ from functools import lru_cache
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 
-from app.repositories.branches import InMemoryBranchRepository
-from app.repositories.deliveries import InMemoryDeliveryRepository
-from app.repositories.logistics import InMemoryBatchRepository, InMemoryVehicleRepository
-from app.repositories.parcels import InMemoryParcelRepository, InMemoryTrackingRepository
-from app.repositories.user_management import InMemoryUserManagementRepository
-from app.repositories.users import InMemoryUserRepository
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database.database import get_db
+from app.repositories.branches import InMemoryBranchRepository, SqlAlchemyBranchRepository
+from app.repositories.deliveries import InMemoryDeliveryRepository, SqlAlchemyDeliveryRepository
+from app.repositories.logistics import InMemoryBatchRepository, InMemoryVehicleRepository, SqlAlchemyBatchRepository, SqlAlchemyVehicleRepository
+from app.repositories.notifications import InMemoryNotificationRepository, SqlAlchemyNotificationRepository
+from app.repositories.parcels import InMemoryParcelRepository, InMemoryTrackingRepository, SqlAlchemyParcelRepository, SqlAlchemyTrackingRepository
+from app.repositories.user_management import InMemoryUserManagementRepository, SqlAlchemyUserManagementRepository
+from app.repositories.users import InMemoryUserRepository, SqlAlchemyUserRepository
 from app.schemas.user import UserInDB
 from app.services.auth import AuthService
 from app.services.deliveries import DeliveryService
 from app.services.logistics import LogisticsService
+from app.services.notifications import NotificationService
 from app.services.parcels import ParcelService
 from app.services.reports import ReportService
 from app.services.branches import BranchService
@@ -33,8 +38,8 @@ def get_user_repository() -> InMemoryUserRepository:
     return InMemoryUserRepository(seed_users())
 
 
-def get_auth_service(repo: InMemoryUserRepository = Depends(get_user_repository)) -> AuthService:
-    return AuthService(repo)
+def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
+    return AuthService(SqlAlchemyUserRepository(db))
 
 
 @lru_cache
@@ -47,11 +52,20 @@ def get_tracking_repository() -> InMemoryTrackingRepository:
     return InMemoryTrackingRepository(seed_tracking_history())
 
 
+@lru_cache
+def get_notification_repository() -> InMemoryNotificationRepository:
+    return InMemoryNotificationRepository()
+
+
+def get_notification_service(db: AsyncSession = Depends(get_db)) -> NotificationService:
+    return NotificationService(SqlAlchemyNotificationRepository(db))
+
+
 def get_parcel_service(
-    parcels: InMemoryParcelRepository = Depends(get_parcel_repository),
-    tracking: InMemoryTrackingRepository = Depends(get_tracking_repository),
+    db: AsyncSession = Depends(get_db),
+    notifications: NotificationService = Depends(get_notification_service),
 ) -> ParcelService:
-    return ParcelService(parcels, tracking)
+    return ParcelService(SqlAlchemyParcelRepository(db), SqlAlchemyTrackingRepository(db), notifications)
 
 
 @lru_cache
@@ -65,14 +79,16 @@ def get_vehicle_repository() -> InMemoryVehicleRepository:
 
 
 def get_logistics_service(
-    batches: InMemoryBatchRepository = Depends(get_batch_repository),
-    vehicles: InMemoryVehicleRepository = Depends(get_vehicle_repository),
+    db: AsyncSession = Depends(get_db),
+    notifications: NotificationService = Depends(get_notification_service),
 ) -> LogisticsService:
-    return LogisticsService(batches, vehicles)
+    return LogisticsService(SqlAlchemyBatchRepository(db), SqlAlchemyVehicleRepository(db), notifications)
 
 
-def get_report_service() -> ReportService:
-    return ReportService()
+def get_report_service(
+    notifications: NotificationService = Depends(get_notification_service),
+) -> ReportService:
+    return ReportService(notifications)
 
 
 @lru_cache
@@ -80,10 +96,8 @@ def get_branch_repository() -> InMemoryBranchRepository:
     return InMemoryBranchRepository(seed_branches())
 
 
-def get_branch_service(
-    branches: InMemoryBranchRepository = Depends(get_branch_repository),
-) -> BranchService:
-    return BranchService(branches)
+def get_branch_service(db: AsyncSession = Depends(get_db)) -> BranchService:
+    return BranchService(SqlAlchemyBranchRepository(db))
 
 
 @lru_cache
@@ -91,10 +105,8 @@ def get_user_management_repository() -> InMemoryUserManagementRepository:
     return InMemoryUserManagementRepository(seed_users_management())
 
 
-def get_user_management_service(
-    users: InMemoryUserManagementRepository = Depends(get_user_management_repository),
-) -> UserManagementService:
-    return UserManagementService(users)
+def get_user_management_service(db: AsyncSession = Depends(get_db)) -> UserManagementService:
+    return UserManagementService(SqlAlchemyUserManagementRepository(db))
 
 
 @lru_cache
@@ -103,13 +115,14 @@ def get_delivery_repository() -> InMemoryDeliveryRepository:
 
 
 def get_delivery_service(
-    deliveries: InMemoryDeliveryRepository = Depends(get_delivery_repository),
+    db: AsyncSession = Depends(get_db),
+    notifications: NotificationService = Depends(get_notification_service),
 ) -> DeliveryService:
-    return DeliveryService(deliveries)
+    return DeliveryService(SqlAlchemyDeliveryRepository(db), notifications)
 
 
-def get_current_user(
+async def get_current_user(
     token: str = Depends(oauth2_scheme),
     service: AuthService = Depends(get_auth_service),
 ) -> UserInDB:
-    return service.get_current_user(token)
+    return await service.get_current_user(token)

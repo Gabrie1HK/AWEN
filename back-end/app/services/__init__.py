@@ -2,6 +2,7 @@ from app.services.auth import AuthService
 from app.services.branches import BranchService
 from app.services.deliveries import DeliveryService
 from app.services.logistics import LogisticsService
+from app.services.notifications import NotificationService
 from app.services.parcels import ParcelService
 from app.services.reports import ReportService
 from app.services.seed import seed_users
@@ -25,6 +26,7 @@ __all__ = [
     "BranchService",
     "DeliveryService",
     "LogisticsService",
+    "NotificationService",
     "ParcelService",
     "ReportService",
     "seed_users",

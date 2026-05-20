@@ -1,9 +1,12 @@
 import { useState, useMemo } from 'react'
 
-export default function DataTable({ columns, data, pageSize = 10 }) {
-  const [page, setPage] = useState(0)
+export default function DataTable({ columns, data, pageSize = 10, totalItems, onPageChange, currentPage: currentPageProp = 1 }) {
+  const isServerPaginated = Boolean(onPageChange)
+  const [clientPage, setClientPage] = useState(1)
   const [sortKey, setSortKey] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
+
+  const currentPage = isServerPaginated ? currentPageProp : clientPage
 
   const sorted = useMemo(() => {
     if (!sortKey) return data
@@ -16,8 +19,11 @@ export default function DataTable({ columns, data, pageSize = 10 }) {
     })
   }, [data, sortKey, sortDir])
 
-  const totalPages = Math.ceil(sorted.length / pageSize)
-  const paged = sorted.slice(page * pageSize, (page + 1) * pageSize)
+  const totalPages = isServerPaginated
+    ? Math.ceil(totalItems / pageSize)
+    : Math.ceil(sorted.length / pageSize)
+
+  const paged = isServerPaginated ? sorted : sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -27,6 +33,17 @@ export default function DataTable({ columns, data, pageSize = 10 }) {
       setSortDir('asc')
     }
   }
+
+  const goToPage = (p) => {
+    if (isServerPaginated) {
+      onPageChange(p)
+    } else {
+      setClientPage(p)
+    }
+  }
+
+  const prevPage = () => goToPage(currentPage - 1)
+  const nextPage = () => goToPage(currentPage + 1)
 
   return (
     <div className="data-table-wrapper">
@@ -42,7 +59,7 @@ export default function DataTable({ columns, data, pageSize = 10 }) {
                 >
                   {col.label}
                   {sortKey === col.key && (
-                    <span style={{ marginLeft: 4 }}>{sortDir === 'asc' ? '▲' : '▼'}</span>
+                    <span style={{ marginLeft: 4 }}>{sortDir === 'asc' ? '\u25B2' : '\u25BC'}</span>
                   )}
                 </th>
               ))}
@@ -70,9 +87,9 @@ export default function DataTable({ columns, data, pageSize = 10 }) {
       </div>
       {totalPages > 1 && (
         <div className="data-table-pagination">
-          <button disabled={page === 0} onClick={() => setPage(p => p - 1)}>Anterior</button>
-          <span>{page + 1} / {totalPages}</span>
-          <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Siguiente</button>
+          <button disabled={currentPage <= 1} onClick={prevPage}>Anterior</button>
+          <span>{currentPage} / {totalPages}</span>
+          <button disabled={currentPage >= totalPages} onClick={nextPage}>Siguiente</button>
         </div>
       )}
     </div>

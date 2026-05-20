@@ -12,8 +12,8 @@ class AuthService:
     def __init__(self, repo: UserRepository) -> None:
         self._repo = repo
 
-    def authenticate(self, email: str, password: str) -> TokenResponse:
-        user = self._repo.get_by_email(email)
+    async def authenticate(self, email: str, password: str) -> TokenResponse:
+        user = await self._repo.get_by_email(email)
         if not user or not verify_password(password, user.hashed_password):
             raise UnauthorizedError("Credenciales invalidas")
 
@@ -24,7 +24,7 @@ class AuthService:
         )
         return TokenResponse(access_token=access_token, user=UserPublic(**user.model_dump(exclude={"hashed_password"})))
 
-    def get_current_user(self, token: str) -> UserInDB:
+    async def get_current_user(self, token: str) -> UserInDB:
         try:
             payload = decode_token(token)
         except Exception as exc:  # noqa: BLE001
@@ -34,7 +34,7 @@ class AuthService:
         if not subject:
             raise UnauthorizedError("Token invalido")
 
-        user = self._repo.get_by_id(int(subject))
+        user = await self._repo.get_by_id(int(subject))
         if not user:
             raise UnauthorizedError("Usuario no encontrado")
         return user

@@ -9,9 +9,9 @@ class TestParcelList:
     def test_list_parcels(self, client, auth_headers):
         response = client.get("/api/v1/parcels", headers=auth_headers)
         assert response.status_code == 200
-        data = response.json()
-        assert len(data) >= 7
-        assert data[0]["guide"] == "AWEN-2026-0001"
+        body = response.json()
+        assert body["total"] >= 7
+        assert body["data"][0]["guide"] == "AWEN-2026-0001"
 
     def test_list_parcels_filter_by_status(self, client, auth_headers):
         response = client.get(
@@ -19,9 +19,9 @@ class TestParcelList:
             headers=auth_headers,
         )
         assert response.status_code == 200
-        data = response.json()
-        assert all(p["status"] == "Delivered" for p in data)
-        assert len(data) == 1
+        body = response.json()
+        assert all(p["status"] == "Delivered" for p in body["data"])
+        assert len(body["data"]) == 1
 
     def test_list_parcels_search(self, client, auth_headers):
         response = client.get(
@@ -29,9 +29,9 @@ class TestParcelList:
             headers=auth_headers,
         )
         assert response.status_code == 200
-        data = response.json()
-        assert len(data) >= 1
-        assert "TechStore" in data[0]["sender"]
+        body = response.json()
+        assert len(body["data"]) >= 1
+        assert "TechStore" in body["data"][0]["sender"]
 
     def test_list_parcels_pagination(self, client, auth_headers):
         response = client.get(
@@ -39,8 +39,11 @@ class TestParcelList:
             headers=auth_headers,
         )
         assert response.status_code == 200
-        data = response.json()
-        assert len(data) == 2
+        body = response.json()
+        assert len(body["data"]) == 2
+        assert body["page"] == 1
+        assert body["pageSize"] == 2
+        assert body["total"] >= 7
 
 
 class TestParcelCRUD:

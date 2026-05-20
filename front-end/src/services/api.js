@@ -130,6 +130,19 @@ export const branchesApi = {
   delete: (id) => request(`/branches/${id}`, { method: 'DELETE' }),
 }
 
+async function requestForm(path, formData) {
+  const headers = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  const res = await fetch(`${BASE_URL}${path}`, { method: 'POST', headers, body: formData })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }))
+    throw new Error(err.detail?.message || err.message || 'Error de red')
+  }
+  return res.json()
+}
+
 export const deliveriesApi = {
   list: (params = {}) => {
     const q = new URLSearchParams()
@@ -140,4 +153,15 @@ export const deliveriesApi = {
   get: (id) => request(`/deliveries/${id}`),
   update: (id, data) => request(`/deliveries/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   addPod: (id, data) => request(`/deliveries/${id}/pod`, { method: 'POST', body: JSON.stringify(data) }),
+  uploadEvidence: (id, file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return requestForm(`/deliveries/${id}/upload`, fd)
+  },
+}
+
+export const notificationsApi = {
+  list: () => request('/notifications'),
+  markRead: (id) => request(`/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllRead: () => request('/notifications/read-all', { method: 'PATCH' }),
 }

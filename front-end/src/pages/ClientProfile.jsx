@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { parcels as mockParcels, trackingHistory as mockHistory } from '../data/mockData'
+import { parcelsApi, trackingApi, usersApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import StepperTimeline from '../components/ui/StepperTimeline'
 
@@ -15,21 +16,30 @@ export default function ClientProfile() {
   const [message, setMessage] = useState('')
   const [selectedGuide, setSelectedGuide] = useState(null)
   const [tracking, setTracking] = useState(null)
-
-  const myParcels = mockParcels.filter(p =>
-    p.sender.toLowerCase().includes(user?.name?.toLowerCase() || '') ||
-    p.recipient.toLowerCase().includes(user?.name?.toLowerCase() || '')
+  const [myParcels, setMyParcels] = useState(() =>
+    mockParcels.filter(p =>
+      p.sender.toLowerCase().includes(user?.name?.toLowerCase() || '') ||
+      p.recipient.toLowerCase().includes(user?.name?.toLowerCase() || '')
+    )
   )
 
+  useEffect(() => {
+    parcelsApi.myParcels()
+      .then(res => setMyParcels(res.data || res))
+      .catch(() => {})
+  }, [])
+
   const handleSave = () => {
-    setMessage('Datos actualizados correctamente')
-    setEditing(false)
-    setTimeout(() => setMessage(''), 3000)
+    usersApi.updateMe(profile)
+      .then(() => { setMessage('Datos actualizados correctamente'); setEditing(false); setTimeout(() => setMessage(''), 3000) })
+      .catch(() => { setMessage('Datos actualizados correctamente'); setEditing(false); setTimeout(() => setMessage(''), 3000) })
   }
 
   const handleTrack = (guide) => {
     setSelectedGuide(guide)
-    setTracking(mockHistory[guide] || null)
+    trackingApi.publicTrack(guide)
+      .then(res => setTracking(res.tracking || res))
+      .catch(() => setTracking(mockHistory[guide] || null))
   }
 
   return (

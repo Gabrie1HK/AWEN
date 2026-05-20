@@ -1,15 +1,8 @@
-import { useState } from 'react'
-import { reportSummary, dailyShipments, deliveriesByBranch, parcels, topRoutes } from '../data/mockData'
+import { useState, useEffect, useMemo } from 'react'
+import { reportSummary as mockSummary, dailyShipments as mockDaily, deliveriesByBranch as mockBranch, parcels as mockParcels, topRoutes as mockRoutes } from '../data/mockData'
+import { reportsApi, parcelsApi } from '../services/api'
 import StatCard from '../components/ui/StatCard'
 import DataTable from '../components/ui/DataTable'
-
-const statusCounts = {
-  Registered: parcels.filter(p => p.status === 'Registered').length,
-  'In Transit': parcels.filter(p => p.status === 'In Transit').length,
-  Delivered: parcels.filter(p => p.status === 'Delivered').length,
-  Returned: parcels.filter(p => p.status === 'Returned').length,
-  'At Destination Branch': parcels.filter(p => p.status === 'At Destination Branch').length,
-}
 
 const STATUS_COLORS = {
   Registered: '#3b82f6',
@@ -28,6 +21,37 @@ const routeColumns = [
 export default function Reports() {
   const [dateFrom, setDateFrom] = useState('2026-05-01')
   const [dateTo, setDateTo] = useState('2026-05-13')
+  const [summary, setSummary] = useState(mockSummary)
+  const [daily, setDaily] = useState(mockDaily)
+  const [branchData, setBranchData] = useState(mockBranch)
+  const [parcelList, setParcelList] = useState(mockParcels)
+  const [routes, setRoutes] = useState(mockRoutes)
+
+  const statusCounts = useMemo(() => ({
+    Registered: parcelList.filter(p => p.status === 'Registered').length,
+    'In Transit': parcelList.filter(p => p.status === 'In Transit').length,
+    Delivered: parcelList.filter(p => p.status === 'Delivered').length,
+    Returned: parcelList.filter(p => p.status === 'Returned').length,
+    'At Destination Branch': parcelList.filter(p => p.status === 'At Destination Branch').length,
+  }), [parcelList])
+
+  useEffect(() => {
+    reportsApi.summary()
+      .then(setSummary)
+      .catch(() => {})
+    reportsApi.dailyVolume({ dateFrom, dateTo })
+      .then(setDaily)
+      .catch(() => {})
+    reportsApi.deliveriesByBranch()
+      .then(setBranchData)
+      .catch(() => {})
+    reportsApi.topRoutes()
+      .then(setRoutes)
+      .catch(() => {})
+    parcelsApi.list({ pageSize: 100 })
+      .then(res => setParcelList(res.data || res))
+      .catch(() => {})
+  }, [dateFrom, dateTo])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
@@ -39,25 +63,34 @@ export default function Reports() {
           Hasta: <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
         </label>
         <button className="btn btn-outline">Filtrar</button>
-        <button className="btn btn-primary" style={{ marginLeft: 'auto' }}>
+        <button className="btn btn-primary" style={{ marginLeft: 'auto' }} onClick={async () => {
+          try {
+            const csv = await reportsApi.exportCsv()
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url; a.download = `reporte-awen-${dateFrom}-${dateTo}.csv`
+            a.click(); URL.revokeObjectURL(url)
+          } catch { /* silent fallback */ }
+        }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Exportar
         </button>
       </div>
 
       <div className="kpi-grid">
-        <StatCard icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>} value={reportSummary.totalVolume} label="Volumen Total" />
-        <StatCard icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>} value={reportSummary.avgDeliveryTime} label="Tiempo Prom. Entrega" color="#8b5cf6" />
-        <StatCard icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>} value={reportSummary.successRate} label="Tasa de Exito" color="#10b981" />
-        <StatCard icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>} value={reportSummary.returnRate} label="Tasa de Devolucion" color="#ef4444" />
+        <StatCard icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>} value={summary.totalVolume} label="Volumen Total" />
+        <StatCard icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>} value={summary.avgDeliveryTime} label="Tiempo Prom. Entrega" color="#8b5cf6" />
+        <StatCard icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>} value={summary.successRate} label="Tasa de Exito" color="#10b981" />
+        <StatCard icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>} value={summary.returnRate} label="Tasa de Devolucion" color="#ef4444" />
       </div>
 
       <div className="dashboard-charts">
         <div className="chart-card">
           <h3>Volumen Diario (30 dias)</h3>
           <div className="chart-bars-horizontal">
-            {dailyShipments.map(d => {
-              const maxVal = Math.max(...dailyShipments.map(x => x.count))
+            {daily.map(d => {
+              const maxVal = Math.max(...daily.map(x => x.count))
               return (
                 <div key={d.day} className="chart-bar-col">
                   <div className="chart-bar-value">{d.count}</div>
@@ -73,8 +106,8 @@ export default function Reports() {
         <div className="chart-card">
           <h3>Entregas por Sucursal</h3>
           <div className="chart-bars-horizontal">
-            {deliveriesByBranch.map(d => {
-              const maxVal = Math.max(...deliveriesByBranch.map(x => x.count))
+            {branchData.map(d => {
+              const maxVal = Math.max(...branchData.map(x => x.count))
               return (
                 <div key={d.branch} className="chart-bar-col">
                   <div className="chart-bar-value">{d.count}</div>
@@ -122,7 +155,7 @@ export default function Reports() {
         </div>
         <div className="chart-card">
           <h3>Top Rutas por Volumen</h3>
-          <DataTable columns={routeColumns} data={topRoutes} />
+          <DataTable columns={routeColumns} data={routes} />
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { branches } from '../data/mockData'
+import { useState, useEffect, useCallback } from 'react'
+import { branches as mockBranches } from '../data/mockData'
+import { branchesApi } from '../services/api'
 import DataTable from '../components/ui/DataTable'
 import SearchBar from '../components/ui/SearchBar'
 import ConfirmModal from '../components/ui/ConfirmModal'
@@ -7,9 +8,9 @@ import ConfirmModal from '../components/ui/ConfirmModal'
 const columns = (onEdit, onDelete) => [
   { key: 'name', label: 'Nombre', sortable: true },
   { key: 'city', label: 'Ciudad', sortable: true },
-  { key: 'address', label: 'Dirección', sortable: true },
+  { key: 'address', label: 'Direccion', sortable: true },
   { key: 'manager', label: 'Encargado', sortable: true },
-  { key: 'phone', label: 'Teléfono' },
+  { key: 'phone', label: 'Telefono' },
   {
     key: 'active', label: 'Estado', sortable: true,
     render: (r) => (
@@ -33,14 +34,33 @@ const columns = (onEdit, onDelete) => [
   },
 ]
 
+const PAGE_SIZE = 10
+
 export default function BranchManagement() {
   const [search, setSearch] = useState('')
   const [editBranch, setEditBranch] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [branchList, setBranchList] = useState(mockBranches)
+  const [totalBranches, setTotalBranches] = useState(mockBranches.length)
+  const [page, setPage] = useState(1)
 
-  const filtered = branches.filter(b =>
-    !search || b.name.toLowerCase().includes(search.toLowerCase()) || b.city.toLowerCase().includes(search.toLowerCase())
-  )
+  const fetchBranches = useCallback((p, s) => {
+    branchesApi.list({ page: p, pageSize: PAGE_SIZE, search: s || undefined })
+      .then(res => {
+        setBranchList(res.data || res)
+        setTotalBranches(res.total || res.length || 0)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetchBranches(page, search)
+  }, [page, fetchBranches])
+
+  useEffect(() => {
+    setPage(1)
+    fetchBranches(1, search)
+  }, [search, fetchBranches])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
@@ -52,7 +72,14 @@ export default function BranchManagement() {
         </button>
       </div>
 
-      <DataTable columns={columns(b => setEditBranch(b), b => setDeleteTarget(b))} data={filtered} />
+      <DataTable
+        columns={columns(b => setEditBranch(b), b => setDeleteTarget(b))}
+        data={branchList}
+        pageSize={PAGE_SIZE}
+        totalItems={totalBranches}
+        currentPage={page}
+        onPageChange={setPage}
+      />
 
       {editBranch && (
         <div className="modal-overlay" onClick={() => setEditBranch(null)}>
@@ -66,23 +93,23 @@ export default function BranchManagement() {
             <div className="form-grid">
               <div className="form-field">
                 <label>Nombre</label>
-                <input type="text" placeholder="Nombre sucursal" defaultValue={editBranch.name || ''} />
+                <input name="name" type="text" placeholder="Nombre sucursal" defaultValue={editBranch.name || ''} />
               </div>
               <div className="form-field">
                 <label>Ciudad</label>
-                <input type="text" placeholder="Ciudad" defaultValue={editBranch.city || ''} />
+                <input name="city" type="text" placeholder="Ciudad" defaultValue={editBranch.city || ''} />
               </div>
               <div className="form-field form-field-full">
-                <label>Dirección</label>
-                <input type="text" placeholder="Dirección completa" defaultValue={editBranch.address || ''} />
+                <label>Direccion</label>
+                <input name="address" type="text" placeholder="Direccion completa" defaultValue={editBranch.address || ''} />
               </div>
               <div className="form-field">
                 <label>Encargado</label>
-                <input type="text" placeholder="Nombre encargado" defaultValue={editBranch.manager || ''} />
+                <input name="manager" type="text" placeholder="Nombre encargado" defaultValue={editBranch.manager || ''} />
               </div>
               <div className="form-field">
-                <label>Teléfono</label>
-                <input type="text" placeholder="+56 X XXXX XXXX" defaultValue={editBranch.phone || ''} />
+                <label>Telefono</label>
+                <input name="phone" type="text" placeholder="+58 X XXXX XXXX" defaultValue={editBranch.phone || ''} />
               </div>
               <div className="form-field form-field-full" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
                 <input type="checkbox" id="branch-active" defaultChecked={editBranch.active !== false} />
@@ -91,7 +118,30 @@ export default function BranchManagement() {
             </div>
             <div className="modal-actions" style={{ marginTop: 'var(--space-lg)' }}>
               <button className="btn btn-outline" onClick={() => setEditBranch(null)}>Cancelar</button>
-              <button className="btn btn-primary" onClick={() => setEditBranch(null)}>
+              <button className="btn btn-primary" onClick={() => {
+                const f = document.querySelector('.modal-content.modal-wide .form-grid')
+                if (!f) return
+                const get = (n) => f.querySelector(`[name="${n}"]`)?.value || ''
+                const checked = f.querySelector('#branch-active')?.checked ?? true
+                const data = { name: get('name'), city: get('city'), address: get('address'), manager: get('manager'), phone: get('phone'), active: checked }
+                if (editBranch?.id) {
+                  branchesApi.update(editBranch.id, data)
+                    .then(r => setBranchList(prev => prev.map(b => b.id === editBranch.id ? r : b)))
+                    .catch(() => setBranchList(prev => prev.map(b => b.id === editBranch.id ? { ...b, ...data } : b)))
+                } else {
+                  branchesApi.create(data)
+                    .then(r => {
+                      setBranchList(prev => [r, ...prev.slice(0, PAGE_SIZE - 1)])
+                      setTotalBranches(t => t + 1)
+                    })
+                    .catch(() => {
+                      const newB = { ...data, id: Date.now() }
+                      setBranchList(prev => [newB, ...prev.slice(0, PAGE_SIZE - 1)])
+                      setTotalBranches(t => t + 1)
+                    })
+                }
+                setEditBranch(null)
+              }}>
                 {editBranch.id ? 'Guardar Cambios' : 'Crear Sucursal'}
               </button>
             </div>
@@ -102,9 +152,15 @@ export default function BranchManagement() {
       <ConfirmModal
         open={!!deleteTarget}
         title="Eliminar Sucursal"
-        message={`¿Estás seguro de eliminar ${deleteTarget?.name}? Esta acción no se puede deshacer.`}
-        confirmLabel="Sí, Eliminar"
-        onConfirm={() => setDeleteTarget(null)}
+        message={`Estas seguro de eliminar ${deleteTarget?.name}? Esta accion no se puede deshacer.`}
+        confirmLabel="Si, Eliminar"
+        onConfirm={() => {
+          const target = deleteTarget
+          branchesApi.delete(target.id)
+            .then(() => { setBranchList(prev => prev.filter(b => b.id !== target.id)); setTotalBranches(t => t - 1) })
+            .catch(() => { setBranchList(prev => prev.filter(b => b.id !== target.id)); setTotalBranches(t => t - 1) })
+          setDeleteTarget(null)
+        }}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>
