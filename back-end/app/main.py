@@ -1,6 +1,11 @@
+import asyncio
+import sys
 import time
 
 from fastapi import FastAPI, Request
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import router as api_router

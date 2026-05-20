@@ -5,9 +5,9 @@ class TestBatches:
     def test_list_batches(self, client, auth_headers):
         response = client.get("/api/v1/logistics/batches", headers=auth_headers)
         assert response.status_code == 200
-        data = response.json()
-        assert len(data) >= 4
-        assert data[0]["id"] == "LOT-001"
+        body = response.json()
+        assert body["total"] >= 4
+        assert body["data"][0]["id"] == "LOT-001"
 
     def test_get_batch(self, client, auth_headers):
         response = client.get("/api/v1/logistics/batches/LOT-001", headers=auth_headers)
@@ -42,6 +42,6 @@ class TestVehicles:
     def test_list_vehicles(self, client, auth_headers):
         response = client.get("/api/v1/logistics/vehicles", headers=auth_headers)
         assert response.status_code == 200
-        data = response.json()
-        assert len(data) >= 3
-        assert data[0]["plate"] == "ABC-123"
+        body = response.json()
+        assert body["total"] >= 3
+        assert body["data"][0]["plate"] == "ABC-123"

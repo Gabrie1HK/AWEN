@@ -46,11 +46,11 @@ def deliveries_by_branch(
 
 
 @router.get("/activity", response_model=list[ActivityItem])
-def recent_activity(
+async def recent_activity(
     service: ReportService = Depends(get_report_service),
     _user=Depends(get_current_user),
 ) -> list[ActivityItem]:
-    return service.recent_activity()
+    return await service.recent_activity()
 
 
 @router.get("/summary", response_model=ReportSummary)

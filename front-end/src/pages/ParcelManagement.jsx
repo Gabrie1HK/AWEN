@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { parcels, branches } from '../data/mockData'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { parcels as mockParcels, branches as mockBranches } from '../data/mockData'
+import { parcelsApi, branchesApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTable from '../components/ui/DataTable'
 import SearchBar from '../components/ui/SearchBar'
@@ -7,14 +8,14 @@ import ConfirmModal from '../components/ui/ConfirmModal'
 
 const statusOptions = [
   { value: 'Registered', label: 'Registrado' },
-  { value: 'In Transit', label: 'En Tránsito' },
+  { value: 'In Transit', label: 'En Transito' },
   { value: 'At Destination Branch', label: 'En Destino' },
   { value: 'Delivered', label: 'Entregado' },
   { value: 'Returned', label: 'Devuelto' },
 ]
 
 const parcelsColumns = (onView, onEdit, onCancel) => [
-  { key: 'guide', label: 'Guía #', sortable: true },
+  { key: 'guide', label: 'Guia #', sortable: true },
   { key: 'sender', label: 'Remitente', sortable: true },
   { key: 'recipient', label: 'Destinatario', sortable: true },
   { key: 'originBranch', label: 'Origen', sortable: true },
@@ -46,18 +47,43 @@ const parcelsColumns = (onView, onEdit, onCancel) => [
   },
 ]
 
+const PAGE_SIZE = 10
+
 export default function ParcelManagement() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [selectedParcel, setSelectedParcel] = useState(null)
   const [cancelTarget, setCancelTarget] = useState(null)
   const [showForm, setShowForm] = useState(false)
+  const [parcelList, setParcelList] = useState(mockParcels)
+  const [branchList, setBranchList] = useState(mockBranches)
+  const [totalParcels, setTotalParcels] = useState(mockParcels.length)
+  const [page, setPage] = useState(1)
+  const formRef = useRef(null)
 
-  const filtered = parcels.filter(p => {
-    const matchesSearch = !search || p.guide.toLowerCase().includes(search.toLowerCase()) || p.sender.toLowerCase().includes(search.toLowerCase()) || p.recipient.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = !statusFilter || p.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  const fetchParcels = useCallback((p, s, st) => {
+    parcelsApi.list({ page: p, pageSize: PAGE_SIZE, search: s, status: st || undefined })
+      .then(res => {
+        setParcelList(res.data || res)
+        setTotalParcels(res.total || res.length || 0)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetchParcels(page, search, statusFilter)
+  }, [page, fetchParcels])
+
+  useEffect(() => {
+    setPage(1)
+    fetchParcels(1, search, statusFilter)
+  }, [search, statusFilter, fetchParcels])
+
+  useEffect(() => {
+    branchesApi.list({ pageSize: 50 })
+      .then(res => setBranchList(res.data || res))
+      .catch(() => {})
+  }, [])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
@@ -79,7 +105,11 @@ export default function ParcelManagement() {
           p => { setSelectedParcel(p); setShowForm(true) },
           p => setCancelTarget(p)
         )}
-        data={filtered}
+        data={parcelList}
+        pageSize={PAGE_SIZE}
+        totalItems={totalParcels}
+        currentPage={page}
+        onPageChange={setPage}
       />
 
       {selectedParcel && !showForm && (
@@ -120,7 +150,7 @@ export default function ParcelManagement() {
                 </div>
               </div>
               <div className="detail-section">
-                <h4>Códigos</h4>
+                <h4>Codigos</h4>
                 <div className="barcode-placeholder">{selectedParcel.barcode}</div>
                 <div className="qr-placeholder">
                   <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
@@ -149,69 +179,100 @@ export default function ParcelManagement() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
               </button>
             </div>
-            <div className="form-grid">
+            <form ref={formRef} className="form-grid">
               <div className="form-field">
                 <label>Remitente</label>
-                <input type="text" placeholder="Nombre" defaultValue={selectedParcel?.sender} />
+                <input name="sender" type="text" placeholder="Nombre" defaultValue={selectedParcel?.sender} />
               </div>
               <div className="form-field">
                 <label>RUT / ID Remitente</label>
-                <input type="text" placeholder="XX.XXX.XXX-X" defaultValue={selectedParcel?.senderId} />
+                <input name="senderId" type="text" placeholder="XX.XXX.XXX-X" defaultValue={selectedParcel?.senderId} />
               </div>
               <div className="form-field">
-                <label>Teléfono Remitente</label>
-                <input type="text" placeholder="+56 9 XXXX XXXX" defaultValue={selectedParcel?.senderPhone} />
+                <label>Telefono Remitente</label>
+                <input name="senderPhone" type="text" placeholder="+58 X XXXX XXXX" defaultValue={selectedParcel?.senderPhone} />
               </div>
               <div className="form-field">
                 <label>Destinatario</label>
-                <input type="text" placeholder="Nombre" defaultValue={selectedParcel?.recipient} />
+                <input name="recipient" type="text" placeholder="Nombre" defaultValue={selectedParcel?.recipient} />
               </div>
               <div className="form-field">
                 <label>RUT / ID Destinatario</label>
-                <input type="text" placeholder="XX.XXX.XXX-X" defaultValue={selectedParcel?.recipientId} />
+                <input name="recipientId" type="text" placeholder="XX.XXX.XXX-X" defaultValue={selectedParcel?.recipientId} />
               </div>
               <div className="form-field">
-                <label>Teléfono Destinatario</label>
-                <input type="text" placeholder="+56 9 XXXX XXXX" defaultValue={selectedParcel?.recipientPhone} />
+                <label>Telefono Destinatario</label>
+                <input name="recipientPhone" type="text" placeholder="+58 X XXXX XXXX" defaultValue={selectedParcel?.recipientPhone} />
               </div>
               <div className="form-field form-field-full">
-                <label>Dirección Destinatario</label>
-                <input type="text" placeholder="Calle, número, ciudad" defaultValue={selectedParcel?.recipientAddress} />
+                <label>Direccion Destinatario</label>
+                <input name="recipientAddress" type="text" placeholder="Calle, numero, ciudad" defaultValue={selectedParcel?.recipientAddress} />
               </div>
               <div className="form-field">
                 <label>Sucursal Origen</label>
-                <select defaultValue={selectedParcel?.originBranch || ''}>
+                <select name="originBranch" defaultValue={selectedParcel?.originBranch || ''}>
                   <option value="">Seleccionar...</option>
-                  {branches.filter(b => b.active).map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+                  {branchList.filter(b => b.active).map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
                 </select>
               </div>
               <div className="form-field">
                 <label>Sucursal Destino</label>
-                <select defaultValue={selectedParcel?.destinationBranch || ''}>
+                <select name="destinationBranch" defaultValue={selectedParcel?.destinationBranch || ''}>
                   <option value="">Seleccionar...</option>
-                  {branches.filter(b => b.active).map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+                  {branchList.filter(b => b.active).map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
                 </select>
               </div>
               <div className="form-field">
                 <label>Peso (kg)</label>
-                <input type="number" step="0.1" placeholder="0.0" defaultValue={selectedParcel?.weight} />
+                <input name="weight" type="number" step="0.1" placeholder="0.0" defaultValue={selectedParcel?.weight} />
               </div>
               <div className="form-field">
                 <label>Dimensiones</label>
-                <input type="text" placeholder="LxAxA cm" defaultValue={selectedParcel?.dimensions} />
+                <input name="dimensions" type="text" placeholder="LxAxA cm" defaultValue={selectedParcel?.dimensions} />
               </div>
               <div className="form-field">
                 <label>Valor Declarado ($)</label>
-                <input type="number" placeholder="0" defaultValue={selectedParcel?.declaredValue} />
+                <input name="declaredValue" type="number" placeholder="0" defaultValue={selectedParcel?.declaredValue} />
               </div>
               <div className="form-field form-field-full">
-                <label>Descripción</label>
-                <textarea rows="2" placeholder="Contenido del paquete" defaultValue={selectedParcel?.description} />
+                <label>Descripcion</label>
+                <textarea name="description" rows="2" placeholder="Contenido del paquete" defaultValue={selectedParcel?.description} />
               </div>
-            </div>
+            </form>
             <div className="modal-actions" style={{ marginTop: 'var(--space-lg)' }}>
               <button className="btn btn-outline" onClick={() => { setShowForm(false); setSelectedParcel(null) }}>Cancelar</button>
-              <button className="btn btn-primary" onClick={() => { setShowForm(false); setSelectedParcel(null) }}>
+              <button className="btn btn-primary" onClick={() => {
+                const f = formRef.current
+                if (!f) return
+                const get = (n) => f.elements[n]?.value || ''
+                const data = {
+                  sender: get('sender'), senderId: get('senderId'), senderPhone: get('senderPhone'),
+                  recipient: get('recipient'), recipientId: get('recipientId'), recipientPhone: get('recipientPhone'),
+                  recipientAddress: get('recipientAddress'), originBranch: get('originBranch'),
+                  destinationBranch: get('destinationBranch'), weight: parseFloat(get('weight')) || 0,
+                  dimensions: get('dimensions'), declaredValue: parseFloat(get('declaredValue')) || 0,
+                  description: get('description'),
+                }
+                if (selectedParcel) {
+                  parcelsApi.update(selectedParcel.id, data)
+                    .then(r => { setParcelList(prev => prev.map(p => p.id === selectedParcel.id ? r : p)) })
+                    .catch(() => { setParcelList(prev => prev.map(p => p.id === selectedParcel.id ? { ...p, ...data } : p)) })
+                } else {
+                  parcelsApi.create(data)
+                    .then(r => {
+                      setParcelList(prev => [r, ...prev.slice(0, PAGE_SIZE - 1)])
+                      setTotalParcels(t => t + 1)
+                    })
+                    .catch(() => {
+                      const now = new Date().toISOString().slice(0, 10)
+                      const idx = Date.now()
+                      const newParcel = { ...data, id: 'ENV-' + idx, guide: 'AWEN-2026-' + idx, status: 'Registered', createdAt: now, updatedAt: now, qrData: '', barcode: '' }
+                      setParcelList(prev => [newParcel, ...prev.slice(0, PAGE_SIZE - 1)])
+                      setTotalParcels(t => t + 1)
+                    })
+                }
+                setShowForm(false); setSelectedParcel(null)
+              }}>
                 {selectedParcel ? 'Guardar Cambios' : 'Crear Encomienda'}
               </button>
             </div>
@@ -222,9 +283,15 @@ export default function ParcelManagement() {
       <ConfirmModal
         open={!!cancelTarget}
         title="Cancelar Encomienda"
-        message={`¿Estás seguro de cancelar la encomienda ${cancelTarget?.guide}? Esta acción no se puede deshacer.`}
-        confirmLabel="Sí, Cancelar"
-        onConfirm={() => { setCancelTarget(null) }}
+        message={`Estas seguro de cancelar la encomienda ${cancelTarget?.guide}? Esta accion no se puede deshacer.`}
+        confirmLabel="Si, Cancelar"
+        onConfirm={() => {
+          const target = cancelTarget
+          parcelsApi.cancel(target.id)
+            .then(r => setParcelList(prev => prev.map(p => p.id === target.id ? r : p)))
+            .catch(() => setParcelList(prev => prev.map(p => p.id === target.id ? { ...p, status: 'Cancelled' } : p)))
+          setCancelTarget(null)
+        }}
         onCancel={() => setCancelTarget(null)}
       />
     </div>

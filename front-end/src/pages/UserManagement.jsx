@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { users, branches } from '../data/mockData'
+import { useState, useEffect, useCallback } from 'react'
+import { users as mockUsers, branches as mockBranches } from '../data/mockData'
+import { usersApi, branchesApi } from '../services/api'
 import RoleBadge from '../components/ui/RoleBadge'
 import DataTable from '../components/ui/DataTable'
 import SearchBar from '../components/ui/SearchBar'
@@ -22,7 +23,7 @@ const columns = (onEdit, onDelete) => [
       {r.active ? 'Activo' : 'Inactivo'}
     </span>
   )},
-  { key: 'lastLogin', label: 'Último Acceso', sortable: true },
+  { key: 'lastLogin', label: 'Ultimo Acceso', sortable: true },
   {
     key: 'actions', label: 'Acciones',
     render: (r) => (
@@ -38,17 +39,41 @@ const columns = (onEdit, onDelete) => [
   },
 ]
 
+const PAGE_SIZE = 10
+
 export default function UserManagement() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [editUser, setEditUser] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [userList, setUserList] = useState(mockUsers)
+  const [branchList, setBranchList] = useState(mockBranches)
+  const [totalUsers, setTotalUsers] = useState(mockUsers.length)
+  const [page, setPage] = useState(1)
 
-  const filtered = users.filter(u => {
-    const ms = !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
-    const mr = !roleFilter || u.role === roleFilter
-    return ms && mr
-  })
+  const fetchUsers = useCallback((p, s, r) => {
+    usersApi.list({ page: p, pageSize: PAGE_SIZE, search: s || undefined, role: r || undefined })
+      .then(res => {
+        setUserList(res.data || res)
+        setTotalUsers(res.total || res.length || 0)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetchUsers(page, search, roleFilter)
+  }, [page, fetchUsers])
+
+  useEffect(() => {
+    setPage(1)
+    fetchUsers(1, search, roleFilter)
+  }, [search, roleFilter, fetchUsers])
+
+  useEffect(() => {
+    branchesApi.list({ pageSize: 50 })
+      .then(res => setBranchList(res.data || res))
+      .catch(() => {})
+  }, [])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
@@ -64,7 +89,14 @@ export default function UserManagement() {
         </button>
       </div>
 
-      <DataTable columns={columns(u => setEditUser(u), u => setDeleteTarget(u))} data={filtered} />
+      <DataTable
+        columns={columns(u => setEditUser(u), u => setDeleteTarget(u))}
+        data={userList}
+        pageSize={PAGE_SIZE}
+        totalItems={totalUsers}
+        currentPage={page}
+        onPageChange={setPage}
+      />
 
       {editUser && (
         <div className="modal-overlay" onClick={() => setEditUser(null)}>
@@ -78,24 +110,24 @@ export default function UserManagement() {
             <div className="form-grid">
               <div className="form-field">
                 <label>Nombre</label>
-                <input type="text" placeholder="Nombre completo" defaultValue={editUser.name || ''} />
+                <input name="name" type="text" placeholder="Nombre completo" defaultValue={editUser.name || ''} />
               </div>
               <div className="form-field">
                 <label>Email</label>
-                <input type="email" placeholder="correo@awen.com" defaultValue={editUser.email || ''} />
+                <input name="email" type="email" placeholder="correo@awen.com" defaultValue={editUser.email || ''} />
               </div>
               <div className="form-field">
                 <label>Rol</label>
-                <select defaultValue={editUser.role || ''}>
+                <select name="role" defaultValue={editUser.role || ''}>
                   <option value="">Seleccionar...</option>
                   {roleOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
               <div className="form-field">
                 <label>Sucursal</label>
-                <select defaultValue={editUser.branch || ''}>
+                <select name="branch" defaultValue={editUser.branch || ''}>
                   <option value="">Sin sucursal</option>
-                  {branches.filter(b => b.active).map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+                  {branchList.filter(b => b.active).map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
                 </select>
               </div>
               <div className="form-field form-field-full" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
@@ -105,7 +137,30 @@ export default function UserManagement() {
             </div>
             <div className="modal-actions" style={{ marginTop: 'var(--space-lg)' }}>
               <button className="btn btn-outline" onClick={() => setEditUser(null)}>Cancelar</button>
-              <button className="btn btn-primary" onClick={() => setEditUser(null)}>
+              <button className="btn btn-primary" onClick={() => {
+                const f = document.querySelector('.modal-content .form-grid')
+                if (!f) return
+                const get = (n) => f.querySelector(`[name="${n}"]`)?.value || ''
+                const checked = f.querySelector('#active-toggle')?.checked ?? true
+                const data = { name: get('name'), email: get('email'), role: get('role'), branch: get('branch'), active: checked }
+                if (editUser?.id) {
+                  usersApi.update(editUser.id, data)
+                    .then(r => setUserList(prev => prev.map(u => u.id === editUser.id ? r : u)))
+                    .catch(() => setUserList(prev => prev.map(u => u.id === editUser.id ? { ...u, ...data } : u)))
+                } else {
+                  usersApi.create(data)
+                    .then(r => {
+                      setUserList(prev => [r, ...prev.slice(0, PAGE_SIZE - 1)])
+                      setTotalUsers(t => t + 1)
+                    })
+                    .catch(() => {
+                      const newU = { ...data, id: Date.now(), phone: '', lastLogin: '-' }
+                      setUserList(prev => [newU, ...prev.slice(0, PAGE_SIZE - 1)])
+                      setTotalUsers(t => t + 1)
+                    })
+                }
+                setEditUser(null)
+              }}>
                 {editUser.id ? 'Guardar Cambios' : 'Crear Usuario'}
               </button>
             </div>
@@ -116,9 +171,15 @@ export default function UserManagement() {
       <ConfirmModal
         open={!!deleteTarget}
         title="Eliminar Usuario"
-        message={`¿Estás seguro de eliminar a ${deleteTarget?.name}? Esta acción no se puede deshacer.`}
-        confirmLabel="Sí, Eliminar"
-        onConfirm={() => setDeleteTarget(null)}
+        message={`Estas seguro de eliminar a ${deleteTarget?.name}? Esta accion no se puede deshacer.`}
+        confirmLabel="Si, Eliminar"
+        onConfirm={() => {
+          const target = deleteTarget
+          usersApi.delete(target.id)
+            .then(() => { setUserList(prev => prev.filter(u => u.id !== target.id)); setTotalUsers(t => t - 1) })
+            .catch(() => { setUserList(prev => prev.filter(u => u.id !== target.id)); setTotalUsers(t => t - 1) })
+          setDeleteTarget(null)
+        }}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>

@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 from io import StringIO
+from typing import Optional
 
+from app.schemas.notification import NotificationSchema
 from app.schemas.reports import (
     ActivityItem,
     BranchDeliveryPoint,
+    DashboardResponse,
     DailyShipmentPoint,
     KPIResponse,
     ReportSummary,
     RouteStat,
 )
+from app.services.notifications import NotificationService
 from app.services.seed_reports import (
     seed_dashboard_kpis,
     seed_daily_shipments,
@@ -21,6 +25,9 @@ from app.services.seed_reports import (
 
 
 class ReportService:
+    def __init__(self, notifications: Optional[NotificationService] = None) -> None:
+        self._notifications = notifications
+
     def kpis(self, date_from: str | None = None, date_to: str | None = None) -> KPIResponse:
         return seed_dashboard_kpis()
 
@@ -30,7 +37,18 @@ class ReportService:
     def deliveries_by_branch(self) -> list[BranchDeliveryPoint]:
         return seed_deliveries_by_branch()
 
-    def recent_activity(self) -> list[ActivityItem]:
+    async def recent_activity(self) -> list[ActivityItem]:
+        if self._notifications:
+            notifs: list[NotificationSchema] = await self._notifications.list()
+            if notifs:
+                return [
+                    ActivityItem(
+                        action=n.text,
+                        time=n.time,
+                        detail=n.action_type,
+                    )
+                    for n in notifs[:10]
+                ]
         return seed_recent_activity()
 
     def summary(self) -> ReportSummary:
@@ -45,3 +63,11 @@ class ReportService:
         for item in self.top_routes():
             buffer.write(f"{item.route},{item.volume},{item.avg_time}\n")
         return buffer.getvalue()
+
+    async def get_dashboard(self) -> DashboardResponse:
+        return DashboardResponse(
+            kpis=self.kpis(),
+            dailyShipments=self.daily_shipments(),
+            deliveriesByBranch=self.deliveries_by_branch(),
+            recentActivity=await self.recent_activity(),
+        )

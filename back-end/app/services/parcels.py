@@ -3,8 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import List, Optional
 
+from typing import Any, Dict
+
 from app.core.errors import NotFoundError, ValidationError
-from app.core.pagination import paginate
+from app.core.pagination import paginate_with_meta
 from app.repositories.parcels import ParcelRepository, TrackingRepository
 from app.schemas.parcel import (
     ParcelCreate,
@@ -14,14 +16,16 @@ from app.schemas.parcel import (
     ParcelUpdate,
 )
 from app.schemas.tracking import TrackingEvent
+from app.services.notifications import NotificationService
 
 
 class ParcelService:
-    def __init__(self, parcel_repo: ParcelRepository, tracking_repo: TrackingRepository) -> None:
+    def __init__(self, parcel_repo: ParcelRepository, tracking_repo: TrackingRepository, notifications: Optional[NotificationService] = None) -> None:
         self._parcels = parcel_repo
         self._tracking = tracking_repo
+        self._notifications = notifications
 
-    def list(
+    async def list(
         self,
         search: Optional[str] = None,
         status: Optional[ParcelStatus] = None,
@@ -29,8 +33,8 @@ class ParcelService:
         destination_branch: Optional[str] = None,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
-    ) -> List[ParcelPublic]:
-        items = self._parcels.list()
+    ) -> Dict[str, Any]:
+        items = await self._parcels.list()
         if search:
             lowered = search.lower()
             items = [
@@ -45,31 +49,32 @@ class ParcelService:
             items = [p for p in items if p.origin_branch == origin_branch]
         if destination_branch:
             items = [p for p in items if p.destination_branch == destination_branch]
-        return paginate(items, page, page_size)
+        return paginate_with_meta(items, page, page_size)
 
-    def list_by_user(self, user_name: str) -> List[ParcelPublic]:
+    async def list_by_user(self, user_name: str) -> List[ParcelPublic]:
         lowered = user_name.lower()
+        items = await self._parcels.list()
         return [
-            p for p in self._parcels.list()
+            p for p in items
             if lowered in p.sender.lower() or lowered in p.recipient.lower()
         ]
 
-    def get(self, parcel_id: str) -> ParcelPublic:
-        parcel = self._parcels.get(parcel_id)
+    async def get(self, parcel_id: str) -> ParcelPublic:
+        parcel = await self._parcels.get(parcel_id)
         if not parcel:
             raise NotFoundError("Encomienda no encontrada")
         return parcel
 
-    def get_by_guide(self, guide: str) -> ParcelPublic:
-        parcel = self._parcels.get_by_guide(guide)
+    async def get_by_guide(self, guide: str) -> ParcelPublic:
+        parcel = await self._parcels.get_by_guide(guide)
         if not parcel:
             raise NotFoundError("Encomienda no encontrada")
         return parcel
 
-    def create(self, payload: ParcelCreate) -> ParcelPublic:
+    async def create(self, payload: ParcelCreate) -> ParcelPublic:
         now = datetime.now(timezone.utc).date().isoformat()
-        next_id = self._next_parcel_id()
-        guide = self._next_guide_number()
+        next_id = await self._next_parcel_id()
+        guide = await self._next_guide_number()
         parcel = ParcelPublic(
             id=next_id,
             guide=guide,
@@ -80,60 +85,82 @@ class ParcelService:
             barcode=f"|||{guide}|||",
             **payload.model_dump(by_alias=True),
         )
-        self._parcels.create(parcel)
-        self._tracking.set_history(guide, self._default_tracking(guide))
+        await self._parcels.create(parcel)
+        await self._tracking.set_history(guide, self._default_tracking(guide))
+        if self._notifications:
+            await self._notifications.create(
+                text=f"Nueva encomienda {guide} registrada - {payload.sender} a {payload.recipient}",
+                action_type="parcel_created",
+                related_id=parcel.id,
+            )
         return parcel
 
-    def update(self, parcel_id: str, update: ParcelUpdate) -> ParcelPublic:
-        existing = self._parcels.get(parcel_id)
+    async def update(self, parcel_id: str, update: ParcelUpdate) -> ParcelPublic:
+        existing = await self._parcels.get(parcel_id)
         if not existing:
             raise NotFoundError("Encomienda no encontrada")
-        updated = self._parcels.update(parcel_id, update)
+        updated = await self._parcels.update(parcel_id, update)
         if not updated:
             raise NotFoundError("Encomienda no encontrada")
         data = updated.model_dump(by_alias=True)
         data["updatedAt"] = datetime.now(timezone.utc).date().isoformat()
-        refreshed = ParcelPublic(**data)
-        self._parcels.create(refreshed)
+        await self._parcels.update(parcel_id, ParcelUpdate(**data))
+        refreshed = await self._parcels.get(parcel_id)
+        if not refreshed:
+            raise NotFoundError("Encomienda no encontrada")
         return refreshed
 
-    def update_status(self, parcel_id: str, status_update: ParcelStatusUpdate) -> ParcelPublic:
-        existing = self._parcels.get(parcel_id)
+    async def update_status(self, parcel_id: str, status_update: ParcelStatusUpdate) -> ParcelPublic:
+        existing = await self._parcels.get(parcel_id)
         if not existing:
             raise NotFoundError("Encomienda no encontrada")
         self._validate_status_transition(existing.status, status_update.status)
-        updated = self._parcels.update_status(parcel_id, status_update.status)
+        updated = await self._parcels.update_status(parcel_id, status_update.status)
         if not updated:
             raise NotFoundError("Encomienda no encontrada")
         data = updated.model_dump(by_alias=True)
         data["updatedAt"] = datetime.now(timezone.utc).date().isoformat()
-        refreshed = ParcelPublic(**data)
-        self._parcels.create(refreshed)
-        history = self._tracking.list_by_guide(existing.guide)
+        await self._parcels.update(parcel_id, ParcelUpdate(**data))
+        refreshed = await self._parcels.get(parcel_id)
+        if not refreshed:
+            raise NotFoundError("Encomienda no encontrada")
+        history = await self._tracking.list_by_guide(existing.guide)
         history = self._mark_tracking(history, status_update.status)
-        self._tracking.set_history(existing.guide, history)
+        await self._tracking.set_history(existing.guide, history)
+        if self._notifications:
+            await self._notifications.create(
+                text=f"Encomienda {existing.guide} actualizada a {status_update.status.value}",
+                action_type="parcel_status",
+                related_id=parcel_id,
+            )
         return refreshed
 
-    def cancel(self, parcel_id: str) -> ParcelPublic:
+    async def cancel(self, parcel_id: str) -> ParcelPublic:
         update = ParcelUpdate(status=ParcelStatus.RETURNED)
-        updated = self.update(parcel_id, update)
-        history = self._tracking.list_by_guide(updated.guide)
+        updated = await self.update(parcel_id, update)
+        history = await self._tracking.list_by_guide(updated.guide)
         history = self._mark_tracking(history, ParcelStatus.RETURNED)
-        self._tracking.set_history(updated.guide, history)
+        await self._tracking.set_history(updated.guide, history)
+        if self._notifications:
+            await self._notifications.create(
+                text=f"Encomienda {updated.guide} cancelada y devuelta",
+                action_type="parcel_cancelled",
+                related_id=parcel_id,
+            )
         return updated
 
-    def tracking(self, guide: str) -> List[TrackingEvent]:
-        return self._tracking.list_by_guide(guide)
+    async def tracking(self, guide: str) -> List[TrackingEvent]:
+        return await self._tracking.list_by_guide(guide)
 
-    def _next_parcel_id(self) -> str:
-        existing = self._parcels.list()
+    async def _next_parcel_id(self) -> str:
+        existing = await self._parcels.list()
         if not existing:
             return "ENV-001"
         last = max(int(p.id.split("-")[-1]) for p in existing)
         return f"ENV-{last + 1:03d}"
 
-    def _next_guide_number(self) -> str:
-        existing = self._parcels.list()
+    async def _next_guide_number(self) -> str:
+        existing = await self._parcels.list()
         if not existing:
             return "AWEN-2026-0001"
         last = max(int(p.guide.split("-")[-1]) for p in existing)

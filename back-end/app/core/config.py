@@ -27,6 +27,7 @@ class AppSettings(BaseSettings):
     upload_dir: str = "uploads"
     rate_limit_max: int = 100
     rate_limit_window: int = 60
+    database_url: str = "postgresql+psycopg://postgres:CHANGE_ME@localhost:5432/awen_db"
 
 
 @lru_cache

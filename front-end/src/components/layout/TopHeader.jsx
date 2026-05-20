@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { useLocation } from 'react-router-dom'
+import { notificationsApi } from '../../services/api'
 
 const PAGE_TITLES = {
   '/app/dashboard': 'Dashboard',
@@ -17,9 +18,9 @@ const PAGE_TITLES = {
 }
 
 const MOCK_NOTIFICATIONS = [
-  { id: 1, text: 'Encomienda AWEN-2026-0002 entregada con exito', time: 'Hace 5 min', read: false },
-  { id: 2, text: 'Nueva encomienda registrada AWEN-2026-0007', time: 'Hace 30 min', read: false },
-  { id: 3, text: 'Lote LOT-003 asignado a Conductor Ana', time: 'Hace 2 hs', read: false },
+  { id: '1', text: 'Encomienda AWEN-2026-0002 entregada con exito', time: 'Hace 5 min', read: false },
+  { id: '2', text: 'Nueva encomienda registrada AWEN-2026-0007', time: 'Hace 30 min', read: false },
+  { id: '3', text: 'Lote LOT-003 asignado a Conductor Ana', time: 'Hace 2 hs', read: false },
 ]
 
 export default function TopHeader({ onMenuToggle }) {
@@ -32,6 +33,14 @@ export default function TopHeader({ onMenuToggle }) {
 
   const unread = notifications.filter(n => !n.read).length
 
+  useEffect(() => {
+    notificationsApi.list()
+      .then(res => {
+        if (res && res.data && res.data.length > 0) setNotifications(res.data)
+      })
+      .catch(() => {})
+  }, [])
+
   const handleClickOutside = useCallback((e) => {
     if (ref.current && !ref.current.contains(e.target)) setOpen(false)
   }, [])
@@ -43,10 +52,12 @@ export default function TopHeader({ onMenuToggle }) {
 
   const markAsRead = (id) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    notificationsApi.markRead(id).catch(() => {})
   }
 
   const markAllRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    notificationsApi.markAllRead().catch(() => {})
   }
 
   const initials = user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??'

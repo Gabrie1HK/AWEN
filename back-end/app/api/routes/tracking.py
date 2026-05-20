@@ -10,13 +10,13 @@ router = APIRouter(prefix="/tracking", tags=["tracking"])
 
 
 @router.get("/{guide}", response_model=PublicTrackingResponse, summary="Tracking publico por guia")
-def public_tracking(
+async def public_tracking(
     guide: str,
     service: ParcelService = Depends(get_parcel_service),
 ) -> PublicTrackingResponse:
     """Busca una encomienda por numero de guia y devuelve su estado e historial. No requiere autenticacion."""
     try:
-        parcel = service.get_by_guide(guide)
+        parcel = await service.get_by_guide(guide)
     except Exception:
         return PublicTrackingResponse(guide=guide, parcel=None, history=None)
 
@@ -29,5 +29,5 @@ def public_tracking(
         recipient=parcel.recipient,
         weight=parcel.weight,
     )
-    history = service.tracking(guide)
+    history = await service.tracking(guide)
     return PublicTrackingResponse(guide=guide, parcel=public_parcel, history=history)

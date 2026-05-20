@@ -1,11 +1,27 @@
-import { useState } from 'react'
-import { logisticsBatches, vehicles, parcels } from '../data/mockData'
+import { useState, useEffect } from 'react'
+import { logisticsBatches as mockBatches, vehicles as mockVehicles, parcels as mockParcels } from '../data/mockData'
+import { logisticsApi, parcelsApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
-
-const allParcels = parcels.filter(p => p.status === 'Registered' || p.status === 'At Destination Branch')
 
 export default function Logistics() {
   const [selectedParcels, setSelectedParcels] = useState([])
+  const [batches, setBatches] = useState(mockBatches)
+  const [vehicleList, setVehicleList] = useState(mockVehicles)
+  const [parcelList, setParcelList] = useState(mockParcels)
+
+  const allParcels = parcelList.filter(p => p.status === 'Registered' || p.status === 'At Destination Branch')
+
+  useEffect(() => {
+    logisticsApi.listBatches()
+      .then(res => setBatches(res.data || res))
+      .catch(() => {})
+    logisticsApi.listVehicles()
+      .then(res => setVehicleList(res.data || res))
+      .catch(() => {})
+    parcelsApi.list({ pageSize: 100 })
+      .then(res => setParcelList(res.data || res))
+      .catch(() => {})
+  }, [])
 
   const toggleParcel = (id) => {
     setSelectedParcels(prev =>
@@ -18,7 +34,7 @@ export default function Logistics() {
       <div className="logistics-panel">
         <h3>Lotes Pendientes</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
-          {logisticsBatches.filter(b => b.status !== 'Completed').map(batch => (
+          {batches.filter(b => b.status !== 'Completed').map(batch => (
             <div key={batch.id} className="batch-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <strong>{batch.id}</strong>
@@ -30,7 +46,7 @@ export default function Logistics() {
               {batch.parcelCount > 0 && (
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 8 }}>
                   {batch.parcels.map(pid => {
-                    const p = parcels.find(x => x.id === pid)
+                    const p = parcelList.find(x => x.id === pid)
                     return p ? (
                       <label key={pid} className={`parcel-chip ${selectedParcels.includes(pid) ? 'selected' : ''}`}>
                         <input
@@ -68,13 +84,21 @@ export default function Logistics() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
           <h3>Vehículos y Conductores</h3>
           {selectedParcels.length > 0 && (
-            <button className="btn btn-primary" style={{ fontSize: '0.813rem', padding: '6px 12px' }}>
+            <button className="btn btn-primary" style={{ fontSize: '0.813rem', padding: '6px 12px' }} onClick={() => {
+              const targetBatch = batches.find(b => b.status === 'Pending Assignment')
+              if (targetBatch) {
+                logisticsApi.assignBatch(targetBatch.id, { parcels: selectedParcels })
+                  .then(() => setBatches(prev => prev.map(b => b.id === targetBatch.id ? { ...b, parcels: [...b.parcels, ...selectedParcels], parcelCount: b.parcelCount + selectedParcels.length } : b)))
+                  .catch(() => setBatches(prev => prev.map(b => b.id === targetBatch.id ? { ...b, parcels: [...b.parcels, ...selectedParcels], parcelCount: b.parcelCount + selectedParcels.length } : b)))
+                setSelectedParcels([])
+              }
+            }}>
               Asignar ({selectedParcels.length})
             </button>
           )}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-          {vehicles.map(v => (
+          {vehicleList.map(v => (
             <div key={v.id} className="driver-card">
               <div className="driver-avatar">
                 {v.driver.split(' ').pop()[0]}

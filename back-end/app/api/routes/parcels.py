@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 
 from app.core.dependencies import get_current_user, get_parcel_service
+from app.schemas.pagination import PaginatedResponse
 from app.schemas.parcel import ParcelCreate, ParcelPublic, ParcelStatus, ParcelStatusUpdate, ParcelUpdate
 from app.schemas.tracking import TrackingEvent
 from app.services.parcels import ParcelService
@@ -9,8 +10,8 @@ from app.services.parcels import ParcelService
 router = APIRouter(prefix="/parcels", tags=["parcels"])
 
 
-@router.get("", response_model=list[ParcelPublic], summary="Listar encomiendas")
-def list_parcels(
+@router.get("", response_model=PaginatedResponse[ParcelPublic], summary="Listar encomiendas")
+async def list_parcels(
     search: str | None = None,
     status: ParcelStatus | None = None,
     origin_branch: str | None = Query(default=None, alias="originBranch"),
@@ -19,8 +20,8 @@ def list_parcels(
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
     service: ParcelService = Depends(get_parcel_service),
     _user=Depends(get_current_user),
-) -> list[ParcelPublic]:
-    return service.list(
+) -> dict:
+    return await service.list(
         search=search,
         status=status,
         origin_branch=origin_branch,
@@ -31,65 +32,65 @@ def list_parcels(
 
 
 @router.get("/my-parcels", response_model=list[ParcelPublic], summary="Mis encomiendas (cliente)")
-def my_parcels(
+async def my_parcels(
     service: ParcelService = Depends(get_parcel_service),
     user=Depends(get_current_user),
 ) -> list[ParcelPublic]:
-    return service.list_by_user(user.name)
+    return await service.list_by_user(user.name)
 
 
 @router.get("/{parcel_id}", response_model=ParcelPublic)
-def get_parcel(
+async def get_parcel(
     parcel_id: str,
     service: ParcelService = Depends(get_parcel_service),
     _user=Depends(get_current_user),
 ) -> ParcelPublic:
-    return service.get(parcel_id)
+    return await service.get(parcel_id)
 
 
 @router.post("", response_model=ParcelPublic, summary="Crear encomienda")
-def create_parcel(
+async def create_parcel(
     payload: ParcelCreate,
     service: ParcelService = Depends(get_parcel_service),
     _user=Depends(get_current_user),
 ) -> ParcelPublic:
-    return service.create(payload)
+    return await service.create(payload)
 
 
 @router.patch("/{parcel_id}", response_model=ParcelPublic)
-def update_parcel(
+async def update_parcel(
     parcel_id: str,
     payload: ParcelUpdate,
     service: ParcelService = Depends(get_parcel_service),
     _user=Depends(get_current_user),
 ) -> ParcelPublic:
-    return service.update(parcel_id, payload)
+    return await service.update(parcel_id, payload)
 
 
 @router.post("/{parcel_id}/status", response_model=ParcelPublic)
-def update_status(
+async def update_status(
     parcel_id: str,
     payload: ParcelStatusUpdate,
     service: ParcelService = Depends(get_parcel_service),
     _user=Depends(get_current_user),
 ) -> ParcelPublic:
-    return service.update_status(parcel_id, payload)
+    return await service.update_status(parcel_id, payload)
 
 
 @router.post("/{parcel_id}/cancel", response_model=ParcelPublic)
-def cancel_parcel(
+async def cancel_parcel(
     parcel_id: str,
     service: ParcelService = Depends(get_parcel_service),
     _user=Depends(get_current_user),
 ) -> ParcelPublic:
-    return service.cancel(parcel_id)
+    return await service.cancel(parcel_id)
 
 
 @router.get("/{guide}/tracking", response_model=list[TrackingEvent])
-def parcel_tracking(
+async def parcel_tracking(
     guide: str,
     service: ParcelService = Depends(get_parcel_service),
     _user=Depends(get_current_user),
 ) -> list[TrackingEvent]:
-    service.get_by_guide(guide)
-    return service.tracking(guide)
+    await service.get_by_guide(guide)
+    return await service.tracking(guide)

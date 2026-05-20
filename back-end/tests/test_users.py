@@ -5,8 +5,9 @@ class TestUsers:
     def test_list_users(self, client, auth_headers):
         response = client.get("/api/v1/users", headers=auth_headers)
         assert response.status_code == 200
-        data = response.json()
-        assert len(data) >= 7
+        body = response.json()
+        assert body["total"] >= 7
+        assert len(body["data"]) >= 5
 
     def test_list_users_filter_by_role(self, client, auth_headers):
         response = client.get(
@@ -14,8 +15,8 @@ class TestUsers:
             headers=auth_headers,
         )
         assert response.status_code == 200
-        data = response.json()
-        assert all(u["role"] == "Admin" for u in data)
+        body = response.json()
+        assert all(u["role"] == "Admin" for u in body["data"])
 
     def test_get_user(self, client, auth_headers):
         response = client.get("/api/v1/users/1", headers=auth_headers)

@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
+import { parcelsApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import StepperTimeline from '../components/ui/StepperTimeline'
 
@@ -39,6 +40,15 @@ export default function DriverDashboard() {
   const [msg, setMsg] = useState('')
   const [history, setHistory] = useState(MOCK_HISTORY_BASE)
 
+  useEffect(() => {
+    parcelsApi.list({ pageSize: 50 })
+      .then(res => {
+        const list = res.data || res
+        if (list.length > 0) setParcels(list)
+      })
+      .catch(() => {})
+  }, [])
+
   const handleView = (p) => {
     setSelected(p)
     setNewStatus('')
@@ -50,6 +60,9 @@ export default function DriverDashboard() {
   const handleUpdateStatus = () => {
     if (!newStatus) return
     const guide = selected.guide
+    parcelsApi.updateStatus(selected.id, newStatus)
+      .then(() => {})
+      .catch(() => {})
     const updatedHistory = [...(history[guide] || [])]
     updatedHistory.push({
       step: newStatus,

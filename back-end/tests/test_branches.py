@@ -5,8 +5,9 @@ class TestBranches:
     def test_list_branches(self, client, auth_headers):
         response = client.get("/api/v1/branches", headers=auth_headers)
         assert response.status_code == 200
-        data = response.json()
-        assert len(data) >= 6
+        body = response.json()
+        assert body["total"] >= 6
+        assert len(body["data"]) >= 5
 
     def test_get_branch(self, client, auth_headers):
         response = client.get("/api/v1/branches/1", headers=auth_headers)

@@ -11,6 +11,8 @@ from app.schemas.logistics import (
     VehicleCreate,
     VehiclePublic,
 )
+from app.schemas.notification import NotificationCreate, NotificationSchema
+from app.schemas.pagination import PaginatedResponse
 from app.schemas.parcel import ParcelCreate, ParcelPublic, ParcelStatus, ParcelStatusUpdate, ParcelUpdate
 from app.schemas.reports import (
     ActivityItem,
@@ -45,6 +47,9 @@ __all__ = [
     "BatchUpdate",
     "VehicleCreate",
     "VehiclePublic",
+    "NotificationCreate",
+    "NotificationSchema",
+    "PaginatedResponse",
     "ActivityItem",
     "BranchDeliveryPoint",
     "DailyShipmentPoint",
