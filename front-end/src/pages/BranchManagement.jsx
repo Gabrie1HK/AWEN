@@ -4,6 +4,9 @@ import { branchesApi } from '../services/api'
 import DataTable from '../components/ui/DataTable'
 import SearchBar from '../components/ui/SearchBar'
 import ConfirmModal from '../components/ui/ConfirmModal'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import { useApi } from '../hooks/useApi'
 
 const columns = (onEdit, onDelete) => [
   { key: 'name', label: 'Nombre', sortable: true },
@@ -43,15 +46,17 @@ export default function BranchManagement() {
   const [branchList, setBranchList] = useState(mockBranches)
   const [totalBranches, setTotalBranches] = useState(mockBranches.length)
   const [page, setPage] = useState(1)
+  const { loading, error, setError, execute } = useApi()
 
   const fetchBranches = useCallback((p, s) => {
-    branchesApi.list({ page: p, pageSize: PAGE_SIZE, search: s || undefined })
+    execute(() => branchesApi.list({ page: p, pageSize: PAGE_SIZE, search: s || undefined }))
       .then(res => {
-        setBranchList(res.data || res)
-        setTotalBranches(res.total || res.length || 0)
+        if (res) {
+          setBranchList(res.data || res)
+          setTotalBranches(res.total || res.length || 0)
+        }
       })
-      .catch(() => {})
-  }, [])
+  }, [execute])
 
   useEffect(() => {
     fetchBranches(page, search)
@@ -72,6 +77,8 @@ export default function BranchManagement() {
         </button>
       </div>
 
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
+      {loading ? <LoadingSpinner /> : (
       <DataTable
         columns={columns(b => setEditBranch(b), b => setDeleteTarget(b))}
         data={branchList}
@@ -79,7 +86,7 @@ export default function BranchManagement() {
         totalItems={totalBranches}
         currentPage={page}
         onPageChange={setPage}
-      />
+      />)}
 
       {editBranch && (
         <div className="modal-overlay" onClick={() => setEditBranch(null)}>

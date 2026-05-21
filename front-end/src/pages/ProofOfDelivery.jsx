@@ -3,6 +3,9 @@ import { deliveries as mockDeliveries } from '../data/mockData'
 import { deliveriesApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTable from '../components/ui/DataTable'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import { useApi } from '../hooks/useApi'
 
 const columns = (onView) => [
   { key: 'guide', label: 'Guia #', sortable: true },
@@ -31,15 +34,17 @@ export default function ProofOfDelivery() {
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
   const fileRef = useRef(null)
+  const { loading, error: fetchError, setError: setFetchError, execute } = useApi()
 
   const fetchDeliveries = useCallback((p) => {
-    deliveriesApi.list({ page: p, pageSize: PAGE_SIZE })
+    execute(() => deliveriesApi.list({ page: p, pageSize: PAGE_SIZE }))
       .then(res => {
-        setDeliveryList(res.data || res)
-        setTotalDeliveries(res.total || res.length || 0)
+        if (res) {
+          setDeliveryList(res.data || res)
+          setTotalDeliveries(res.total || res.length || 0)
+        }
       })
-      .catch(() => {})
-  }, [])
+  }, [execute])
 
   useEffect(() => {
     fetchDeliveries(page)
@@ -90,6 +95,8 @@ export default function ProofOfDelivery() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+      <ErrorBanner message={fetchError} onDismiss={() => setFetchError(null)} />
+      {loading ? <LoadingSpinner /> : (
       <DataTable
         columns={columns(d => { setSelected(d); setPhotoUrl(''); setGps(''); setMsg(''); setError('') })}
         data={deliveryList}
@@ -98,6 +105,7 @@ export default function ProofOfDelivery() {
         currentPage={page}
         onPageChange={setPage}
       />
+      )}
 
       {selected && (
         <div className="modal-overlay" onClick={() => setSelected(null)}>

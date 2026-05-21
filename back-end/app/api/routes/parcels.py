@@ -92,5 +92,8 @@ async def parcel_tracking(
     service: ParcelService = Depends(get_parcel_service),
     _user=Depends(get_current_user),
 ) -> list[TrackingEvent]:
-    await service.get_by_guide(guide)
-    return await service.tracking(guide)
+    events = await service.tracking(guide)
+    if not events:
+        from app.core.errors import NotFoundError
+        raise NotFoundError("Encomienda no encontrada")
+    return events

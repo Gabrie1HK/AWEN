@@ -77,3 +77,127 @@ def auth_token(client):
 @pytest.fixture
 def auth_headers(auth_token):
     return {"Authorization": f"Bearer {auth_token}"}
+
+
+@pytest.fixture
+def operator_token(client):
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "operador.carlos@awen.com", "password": "123456"},
+    )
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def operator_headers(operator_token):
+    return {"Authorization": f"Bearer {operator_token}"}
+
+
+@pytest.fixture
+def driver_token(client):
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "conductor.pedro@awen.com", "password": "123456"},
+    )
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def driver_headers(driver_token):
+    return {"Authorization": f"Bearer {driver_token}"}
+
+
+@pytest.fixture
+def client_token(client):
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "juan@email.com", "password": "123456"},
+    )
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def client_headers(client_token):
+    return {"Authorization": f"Bearer {client_token}"}
+
+
+@pytest.fixture
+def empty_notif_repo():
+    """Return an empty InMemoryNotificationRepository for tests that need no notifications."""
+    return InMemoryNotificationRepository()
+
+
+@pytest.fixture
+def empty_client():
+    """Return a TestClient with empty (unseeded) repos for empty-data tests."""
+    app = create_app()
+    notif_repo = InMemoryNotificationRepository()
+    notif_service = NotificationService(notif_repo)
+
+    app.dependency_overrides.update({
+        dependencies.get_auth_service: lambda: AuthService(InMemoryUserRepository()),
+        dependencies.get_notification_service: lambda: notif_service,
+        dependencies.get_parcel_service: lambda: ParcelService(
+            InMemoryParcelRepository(), InMemoryTrackingRepository(), notif_service
+        ),
+        dependencies.get_logistics_service: lambda: LogisticsService(
+            InMemoryBatchRepository(), InMemoryVehicleRepository(), notif_service
+        ),
+        dependencies.get_report_service: lambda: ReportService(notif_service),
+        dependencies.get_branch_service: lambda: BranchService(InMemoryBranchRepository()),
+        dependencies.get_user_management_service: lambda: UserManagementService(InMemoryUserManagementRepository()),
+        dependencies.get_delivery_service: lambda: DeliveryService(InMemoryDeliveryRepository(), notif_service),
+    })
+
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest.fixture
+def admin_user(client):
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@awen.com", "password": "123456"},
+    )
+    return response.json()["user"]
+
+
+@pytest.fixture
+def empty_data_client():
+    """TestClient with users seeded but empty parcels/batches/deliveries/branches."""
+    app = create_app()
+    user_repo = InMemoryUserRepository(seed_users())
+    notif_repo = InMemoryNotificationRepository()
+    notif_service = NotificationService(notif_repo)
+
+    app.dependency_overrides.update({
+        dependencies.get_auth_service: lambda: AuthService(user_repo),
+        dependencies.get_notification_service: lambda: notif_service,
+        dependencies.get_parcel_service: lambda: ParcelService(
+            InMemoryParcelRepository(), InMemoryTrackingRepository(), notif_service
+        ),
+        dependencies.get_logistics_service: lambda: LogisticsService(
+            InMemoryBatchRepository(), InMemoryVehicleRepository(), notif_service
+        ),
+        dependencies.get_report_service: lambda: ReportService(notif_service),
+        dependencies.get_branch_service: lambda: BranchService(InMemoryBranchRepository()),
+        dependencies.get_user_management_service: lambda: UserManagementService(InMemoryUserManagementRepository()),
+        dependencies.get_delivery_service: lambda: DeliveryService(InMemoryDeliveryRepository(), notif_service),
+    })
+
+    with TestClient(app) as c:
+        yield c
+
+
+@pytest.fixture
+def empty_data_token(empty_data_client):
+    response = empty_data_client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@awen.com", "password": "123456"},
+    )
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def empty_data_headers(empty_data_token):
+    return {"Authorization": f"Bearer {empty_data_token}"}

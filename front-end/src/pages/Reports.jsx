@@ -3,6 +3,9 @@ import { reportSummary as mockSummary, dailyShipments as mockDaily, deliveriesBy
 import { reportsApi, parcelsApi } from '../services/api'
 import StatCard from '../components/ui/StatCard'
 import DataTable from '../components/ui/DataTable'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import { useApi } from '../hooks/useApi'
 
 const STATUS_COLORS = {
   Registered: '#3b82f6',
@@ -26,6 +29,7 @@ export default function Reports() {
   const [branchData, setBranchData] = useState(mockBranch)
   const [parcelList, setParcelList] = useState(mockParcels)
   const [routes, setRoutes] = useState(mockRoutes)
+  const { loading, error, setError, execute } = useApi()
 
   const statusCounts = useMemo(() => ({
     Registered: parcelList.filter(p => p.status === 'Registered').length,
@@ -36,25 +40,22 @@ export default function Reports() {
   }), [parcelList])
 
   useEffect(() => {
-    reportsApi.summary()
-      .then(setSummary)
-      .catch(() => {})
-    reportsApi.dailyVolume({ dateFrom, dateTo })
-      .then(setDaily)
-      .catch(() => {})
-    reportsApi.deliveriesByBranch()
-      .then(setBranchData)
-      .catch(() => {})
-    reportsApi.topRoutes()
-      .then(setRoutes)
-      .catch(() => {})
-    parcelsApi.list({ pageSize: 100 })
-      .then(res => setParcelList(res.data || res))
-      .catch(() => {})
+    execute(() => reportsApi.summary())
+      .then(res => { if (res) setSummary(res) })
+    execute(() => reportsApi.dailyVolume({ dateFrom, dateTo }))
+      .then(res => { if (res) setDaily(res) })
+    execute(() => reportsApi.deliveriesByBranch())
+      .then(res => { if (res) setBranchData(res) })
+    execute(() => reportsApi.topRoutes())
+      .then(res => { if (res) setRoutes(res) })
+    execute(() => parcelsApi.list({ pageSize: 100 }))
+      .then(res => { if (res) setParcelList(res.data || res) })
   }, [dateFrom, dateTo])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
+      {loading ? <LoadingSpinner /> : (
       <div className="report-filters">
         <label>
           Desde: <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
@@ -158,6 +159,7 @@ export default function Reports() {
           <DataTable columns={routeColumns} data={routes} />
         </div>
       </div>
+      )}
     </div>
   )
 }

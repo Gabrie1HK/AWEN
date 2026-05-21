@@ -37,6 +37,23 @@ class TestBatches:
         assert response.json()["status"] == "Assigned"
         assert response.json()["vehicle"] == "ABC-123"
 
+    def test_assign_nonexistent_batch(self, client, auth_headers):
+        response = client.post(
+            "/api/v1/logistics/batches/LOT-999/assign",
+            headers=auth_headers,
+            json={"vehicle": "ABC-123", "driver": "Conductor Pedro"},
+        )
+        assert response.status_code == 404
+
+    def test_create_batch_empty_parcels(self, client, auth_headers):
+        response = client.post(
+            "/api/v1/logistics/batches",
+            headers=auth_headers,
+            json={"parcels": []},
+        )
+        assert response.status_code == 200
+        assert response.json()["parcelCount"] == 0
+
 
 class TestVehicles:
     def test_list_vehicles(self, client, auth_headers):
@@ -45,3 +62,12 @@ class TestVehicles:
         body = response.json()
         assert body["total"] >= 3
         assert body["data"][0]["plate"] == "ABC-123"
+
+    def test_create_vehicle(self, client, auth_headers):
+        response = client.post(
+            "/api/v1/logistics/vehicles",
+            headers=auth_headers,
+            json={"plate": "XYZ-789", "model": "Test Van", "capacity": "500 kg", "driver": "Test Driver"},
+        )
+        assert response.status_code == 200
+        assert response.json()["plate"] == "XYZ-789"

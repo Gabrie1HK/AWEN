@@ -27,7 +27,7 @@ class UserBase(AppBaseModel):
 
 
 class UserCreate(UserBase):
-    password: Optional[str] = None
+    pass
 
 
 class UserUpdate(AppBaseModel):
@@ -39,8 +39,6 @@ class UserUpdate(AppBaseModel):
     address: Optional[str] = None
     active: Optional[bool] = None
     last_login: Optional[str] = Field(default=None, alias="lastLogin")
-    password: Optional[str] = None
-
 
 class UserPublic(UserBase):
     id: int

@@ -5,6 +5,9 @@ import StatusBadge from '../components/ui/StatusBadge'
 import DataTable from '../components/ui/DataTable'
 import SearchBar from '../components/ui/SearchBar'
 import ConfirmModal from '../components/ui/ConfirmModal'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import { useApi } from '../hooks/useApi'
 
 const statusOptions = [
   { value: 'Registered', label: 'Registrado' },
@@ -60,15 +63,17 @@ export default function ParcelManagement() {
   const [totalParcels, setTotalParcels] = useState(mockParcels.length)
   const [page, setPage] = useState(1)
   const formRef = useRef(null)
+  const { loading, error, setError, execute } = useApi()
 
   const fetchParcels = useCallback((p, s, st) => {
-    parcelsApi.list({ page: p, pageSize: PAGE_SIZE, search: s, status: st || undefined })
+    execute(() => parcelsApi.list({ page: p, pageSize: PAGE_SIZE, search: s, status: st || undefined }))
       .then(res => {
-        setParcelList(res.data || res)
-        setTotalParcels(res.total || res.length || 0)
+        if (res) {
+          setParcelList(res.data || res)
+          setTotalParcels(res.total || res.length || 0)
+        }
       })
-      .catch(() => {})
-  }, [])
+  }, [execute])
 
   useEffect(() => {
     fetchParcels(page, search, statusFilter)
@@ -80,9 +85,8 @@ export default function ParcelManagement() {
   }, [search, statusFilter, fetchParcels])
 
   useEffect(() => {
-    branchesApi.list({ pageSize: 50 })
-      .then(res => setBranchList(res.data || res))
-      .catch(() => {})
+    execute(() => branchesApi.list({ pageSize: 50 }))
+      .then(res => { if (res) setBranchList(res.data || res) })
   }, [])
 
   return (
@@ -99,6 +103,8 @@ export default function ParcelManagement() {
         </button>
       </div>
 
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
+      {loading ? <LoadingSpinner /> : (
       <DataTable
         columns={parcelsColumns(
           p => setSelectedParcel(p),
@@ -111,6 +117,7 @@ export default function ParcelManagement() {
         currentPage={page}
         onPageChange={setPage}
       />
+      )}
 
       {selectedParcel && !showForm && (
         <div className="modal-overlay" onClick={() => setSelectedParcel(null)}>

@@ -12,7 +12,7 @@ class AppSettings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     debug: bool = False
 
-    secret_key: str = "change-this-secret"
+    secret_key: str = "CHANGE_ME"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
 
