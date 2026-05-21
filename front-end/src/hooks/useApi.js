@@ -13,8 +13,6 @@ export function useApi(initialData = null) {
       setData(result)
       return result
     } catch (err) {
-      const msg = err?.detail?.message || err?.message || 'Error de conexion'
-      setError(msg)
       return null
     } finally {
       setLoading(false)
