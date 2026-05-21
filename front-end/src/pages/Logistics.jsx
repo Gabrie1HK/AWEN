@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { logisticsBatches as mockBatches, vehicles as mockVehicles, parcels as mockParcels } from '../data/mockData'
 import { logisticsApi, parcelsApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import { useApi } from '../hooks/useApi'
 
 export default function Logistics() {
   const [selectedParcels, setSelectedParcels] = useState([])
@@ -10,17 +13,15 @@ export default function Logistics() {
   const [parcelList, setParcelList] = useState(mockParcels)
 
   const allParcels = parcelList.filter(p => p.status === 'Registered' || p.status === 'At Destination Branch')
+  const { loading, error, setError, execute } = useApi()
 
   useEffect(() => {
-    logisticsApi.listBatches()
-      .then(res => setBatches(res.data || res))
-      .catch(() => {})
-    logisticsApi.listVehicles()
-      .then(res => setVehicleList(res.data || res))
-      .catch(() => {})
-    parcelsApi.list({ pageSize: 100 })
-      .then(res => setParcelList(res.data || res))
-      .catch(() => {})
+    execute(() => logisticsApi.listBatches())
+      .then(res => { if (res) setBatches(res.data || res) })
+    execute(() => logisticsApi.listVehicles())
+      .then(res => { if (res) setVehicleList(res.data || res) })
+    execute(() => parcelsApi.list({ pageSize: 100 }))
+      .then(res => { if (res) setParcelList(res.data || res) })
   }, [])
 
   const toggleParcel = (id) => {
@@ -31,6 +32,8 @@ export default function Logistics() {
 
   return (
     <div className="logistics-layout">
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
+      {loading ? <LoadingSpinner /> : (
       <div className="logistics-panel">
         <h3>Lotes Pendientes</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
@@ -125,6 +128,7 @@ export default function Logistics() {
           </div>
         </div>
       </div>
+      )}
     </div>
   )
 }

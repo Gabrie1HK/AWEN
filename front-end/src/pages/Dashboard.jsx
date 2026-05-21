@@ -3,6 +3,9 @@ import { dashboardKPIs as mockKPIs, dailyShipments as mockDaily, deliveriesByBra
 import { dashboardApi } from '../services/api'
 import StatCard from '../components/ui/StatCard'
 import DataTable from '../components/ui/DataTable'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import { useApi } from '../hooks/useApi'
 
 const activityColumns = [
   { key: 'time', label: 'Hora' },
@@ -16,15 +19,18 @@ export default function Dashboard() {
   const [branchData, setBranchData] = useState(mockBranch)
   const [activity, setActivity] = useState(mockActivity)
 
+  const { loading, error, setError, execute } = useApi()
+
   useEffect(() => {
-    dashboardApi.get()
+    execute(() => dashboardApi.get())
       .then(data => {
-        if (data.kpis) setKpis(data.kpis)
-        if (data.dailyVolume) setDaily(data.dailyVolume)
-        if (data.deliveriesByBranch) setBranchData(data.deliveriesByBranch)
-        if (data.recentActivity) setActivity(data.recentActivity)
+        if (data) {
+          if (data.kpis) setKpis(data.kpis)
+          if (data.dailyVolume) setDaily(data.dailyVolume)
+          if (data.deliveriesByBranch) setBranchData(data.deliveriesByBranch)
+          if (data.recentActivity) setActivity(data.recentActivity)
+        }
       })
-      .catch(() => {})
   }, [])
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
@@ -57,6 +63,8 @@ export default function Dashboard() {
         />
       </div>
 
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
+      {loading ? <LoadingSpinner /> : (
       <div className="dashboard-charts">
         <div className="chart-card">
           <h3>Envíos Últimos 7 Días</h3>
@@ -101,6 +109,7 @@ export default function Dashboard() {
         <h3 style={{ marginBottom: 'var(--space-md)' }}>Actividad Reciente</h3>
         <DataTable columns={activityColumns} data={activity} />
       </div>
+      )}
     </div>
   )
 }

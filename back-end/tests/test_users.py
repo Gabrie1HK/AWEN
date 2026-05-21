@@ -48,6 +48,22 @@ class TestUsers:
         assert response.status_code == 200
         assert response.json()["name"] == "Admin Renamed"
 
+    def test_get_nonexistent_user(self, client, auth_headers):
+        response = client.get("/api/v1/users/9999", headers=auth_headers)
+        assert response.status_code == 404
+
+    def test_update_nonexistent_user(self, client, auth_headers):
+        response = client.patch(
+            "/api/v1/users/9999",
+            headers=auth_headers,
+            json={"name": "Ghost"},
+        )
+        assert response.status_code == 404
+
+    def test_delete_nonexistent_user(self, client, auth_headers):
+        response = client.delete("/api/v1/users/9999", headers=auth_headers)
+        assert response.status_code == 404
+
     def test_delete_user_soft(self, client, auth_headers):
         response = client.delete("/api/v1/users/1", headers=auth_headers)
         assert response.status_code == 200

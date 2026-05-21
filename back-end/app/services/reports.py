@@ -28,13 +28,13 @@ class ReportService:
     def __init__(self, notifications: Optional[NotificationService] = None) -> None:
         self._notifications = notifications
 
-    def kpis(self, date_from: str | None = None, date_to: str | None = None) -> KPIResponse:
+    async def kpis(self, date_from: str | None = None, date_to: str | None = None) -> KPIResponse:
         return seed_dashboard_kpis()
 
-    def daily_shipments(self, date_from: str | None = None, date_to: str | None = None) -> list[DailyShipmentPoint]:
+    async def daily_shipments(self, date_from: str | None = None, date_to: str | None = None) -> list[DailyShipmentPoint]:
         return seed_daily_shipments()
 
-    def deliveries_by_branch(self) -> list[BranchDeliveryPoint]:
+    async def deliveries_by_branch(self) -> list[BranchDeliveryPoint]:
         return seed_deliveries_by_branch()
 
     async def recent_activity(self) -> list[ActivityItem]:
@@ -45,29 +45,29 @@ class ReportService:
                     ActivityItem(
                         action=n.text,
                         time=n.time,
-                        detail=n.action_type,
+                        user=n.action_type,
                     )
                     for n in notifs[:10]
                 ]
         return seed_recent_activity()
 
-    def summary(self) -> ReportSummary:
+    async def summary(self) -> ReportSummary:
         return seed_report_summary()
 
-    def top_routes(self) -> list[RouteStat]:
+    async def top_routes(self) -> list[RouteStat]:
         return seed_top_routes()
 
-    def export_csv(self) -> str:
+    async def export_csv(self) -> str:
         buffer = StringIO()
         buffer.write("route,volume,avg_time\n")
-        for item in self.top_routes():
+        for item in await self.top_routes():
             buffer.write(f"{item.route},{item.volume},{item.avg_time}\n")
         return buffer.getvalue()
 
     async def get_dashboard(self) -> DashboardResponse:
         return DashboardResponse(
-            kpis=self.kpis(),
-            dailyShipments=self.daily_shipments(),
-            deliveriesByBranch=self.deliveries_by_branch(),
+            kpis=await self.kpis(),
+            dailyShipments=await self.daily_shipments(),
+            deliveriesByBranch=await self.deliveries_by_branch(),
             recentActivity=await self.recent_activity(),
         )

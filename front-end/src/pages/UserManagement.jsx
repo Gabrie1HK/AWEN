@@ -5,6 +5,9 @@ import RoleBadge from '../components/ui/RoleBadge'
 import DataTable from '../components/ui/DataTable'
 import SearchBar from '../components/ui/SearchBar'
 import ConfirmModal from '../components/ui/ConfirmModal'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import { useApi } from '../hooks/useApi'
 
 const roleOptions = [
   { value: 'Admin', label: 'Admin' },
@@ -50,15 +53,17 @@ export default function UserManagement() {
   const [branchList, setBranchList] = useState(mockBranches)
   const [totalUsers, setTotalUsers] = useState(mockUsers.length)
   const [page, setPage] = useState(1)
+  const { loading, error, setError, execute } = useApi()
 
   const fetchUsers = useCallback((p, s, r) => {
-    usersApi.list({ page: p, pageSize: PAGE_SIZE, search: s || undefined, role: r || undefined })
+    execute(() => usersApi.list({ page: p, pageSize: PAGE_SIZE, search: s || undefined, role: r || undefined }))
       .then(res => {
-        setUserList(res.data || res)
-        setTotalUsers(res.total || res.length || 0)
+        if (res) {
+          setUserList(res.data || res)
+          setTotalUsers(res.total || res.length || 0)
+        }
       })
-      .catch(() => {})
-  }, [])
+  }, [execute])
 
   useEffect(() => {
     fetchUsers(page, search, roleFilter)
@@ -70,9 +75,8 @@ export default function UserManagement() {
   }, [search, roleFilter, fetchUsers])
 
   useEffect(() => {
-    branchesApi.list({ pageSize: 50 })
-      .then(res => setBranchList(res.data || res))
-      .catch(() => {})
+    execute(() => branchesApi.list({ pageSize: 50 }))
+      .then(res => { if (res) setBranchList(res.data || res) })
   }, [])
 
   return (
@@ -89,6 +93,8 @@ export default function UserManagement() {
         </button>
       </div>
 
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
+      {loading ? <LoadingSpinner /> : (
       <DataTable
         columns={columns(u => setEditUser(u), u => setDeleteTarget(u))}
         data={userList}
@@ -97,6 +103,7 @@ export default function UserManagement() {
         currentPage={page}
         onPageChange={setPage}
       />
+      )}
 
       {editUser && (
         <div className="modal-overlay" onClick={() => setEditUser(null)}>

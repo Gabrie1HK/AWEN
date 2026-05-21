@@ -4,6 +4,9 @@ import { parcels as mockParcels, trackingHistory as mockHistory } from '../data/
 import { parcelsApi, trackingApi, usersApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import StepperTimeline from '../components/ui/StepperTimeline'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import { useApi } from '../hooks/useApi'
 
 export default function ClientProfile() {
   const { user } = useAuth()
@@ -22,11 +25,11 @@ export default function ClientProfile() {
       p.recipient.toLowerCase().includes(user?.name?.toLowerCase() || '')
     )
   )
+  const { loading, error, setError, execute } = useApi()
 
   useEffect(() => {
-    parcelsApi.myParcels()
-      .then(res => setMyParcels(res.data || res))
-      .catch(() => {})
+    execute(() => parcelsApi.myParcels())
+      .then(res => { if (res) setMyParcels(res.data || res) })
   }, [])
 
   const handleSave = () => {
@@ -44,6 +47,8 @@ export default function ClientProfile() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
+      {loading ? <LoadingSpinner /> : (
       <div className="kpi-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
         <div className="chart-card">
           <h3 style={{ marginBottom: 'var(--space-md)' }}>Mi Perfil</h3>
@@ -156,6 +161,7 @@ export default function ClientProfile() {
             )}
           </div>
         </div>
+      )}
       )}
     </div>
   )

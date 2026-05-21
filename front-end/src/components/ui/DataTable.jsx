@@ -69,7 +69,7 @@ export default function DataTable({ columns, data, pageSize = 10, totalItems, on
             {paged.map((row, i) => (
               <tr key={row.id || i}>
                 {columns.map(col => (
-                  <td key={col.key}>
+                  <td key={col.key} data-label={col.label}>
                     {col.render ? col.render(row) : row[col.key]}
                   </td>
                 ))}

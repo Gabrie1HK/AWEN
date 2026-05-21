@@ -3,6 +3,9 @@ import { useAuth } from '../hooks/useAuth'
 import { parcelsApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import StepperTimeline from '../components/ui/StepperTimeline'
+import LoadingSpinner from '../components/ui/LoadingSpinner'
+import ErrorBanner from '../components/ui/ErrorBanner'
+import { useApi } from '../hooks/useApi'
 
 const STATUS_OPTIONS = [
   { value: 'Picked Up', label: 'Recogido' },
@@ -39,14 +42,16 @@ export default function DriverDashboard() {
   const [notes, setNotes] = useState({})
   const [msg, setMsg] = useState('')
   const [history, setHistory] = useState(MOCK_HISTORY_BASE)
+  const { loading, error, setError, execute } = useApi()
 
   useEffect(() => {
-    parcelsApi.list({ pageSize: 50 })
+    execute(() => parcelsApi.list({ pageSize: 50 }))
       .then(res => {
-        const list = res.data || res
-        if (list.length > 0) setParcels(list)
+        if (res) {
+          const list = res.data || res
+          if (list.length > 0) setParcels(list)
+        }
       })
-      .catch(() => {})
   }, [])
 
   const handleView = (p) => {
@@ -95,6 +100,9 @@ export default function DriverDashboard() {
         <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Conductor: {user?.name}</span>
       </div>
 
+      <ErrorBanner message={error} onDismiss={() => setError(null)} />
+      {loading ? <LoadingSpinner /> : (
+      <>
       {!selected ? (
         <div className="chart-card">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -187,6 +195,8 @@ export default function DriverDashboard() {
             )}
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   )

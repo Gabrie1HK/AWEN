@@ -88,6 +88,34 @@ class TestParcelCRUD:
         assert response.status_code == 200
         assert response.json()["description"] == "Updated description"
 
+    def test_update_nonexistent_parcel(self, client, auth_headers):
+        response = client.patch(
+            "/api/v1/parcels/ENV-999",
+            headers=auth_headers,
+            json={"description": "No existe"},
+        )
+        assert response.status_code == 404
+
+    def test_create_parcel_auto_generates_guide(self, client, auth_headers):
+        payload = {
+            "sender": "Test",
+            "senderId": "76.123.456-7",
+            "senderPhone": "+56 9 1234 5678",
+            "recipient": "Test",
+            "recipientId": "12.345.678-9",
+            "recipientPhone": "+56 9 8765 4321",
+            "recipientAddress": "Test 123",
+            "originBranch": "Central",
+            "destinationBranch": "Norte",
+            "weight": 5.0,
+            "dimensions": "30x20x15 cm",
+            "declaredValue": 100000,
+            "description": "Auto guide test",
+        }
+        response = client.post("/api/v1/parcels", headers=auth_headers, json=payload)
+        assert response.status_code == 200
+        assert response.json()["guide"].startswith("AWEN-2026-")
+
 
 class TestParcelStatus:
     def test_update_status_valid(self, client, auth_headers):
@@ -133,6 +161,18 @@ class TestParcelStatus:
         assert response.status_code == 200
         assert response.json()["status"] == "Returned"
 
+    def test_cancel_nonexistent_parcel(self, client, auth_headers):
+        response = client.post("/api/v1/parcels/ENV-999/cancel", headers=auth_headers)
+        assert response.status_code == 404
+
+    def test_update_status_nonexistent_parcel(self, client, auth_headers):
+        response = client.post(
+            "/api/v1/parcels/ENV-999/status",
+            headers=auth_headers,
+            json={"status": "Picked Up"},
+        )
+        assert response.status_code == 404
+
     def test_tracking_history(self, client, auth_headers):
         response = client.get(
             "/api/v1/parcels/AWEN-2026-0001/tracking",
@@ -143,6 +183,13 @@ class TestParcelStatus:
         assert len(data) >= 6
         assert data[0]["step"] == "Registered"
         assert data[0]["completed"] is True
+
+    def test_tracking_history_not_found(self, client, auth_headers):
+        response = client.get(
+            "/api/v1/parcels/INVALID-GUIDE/tracking",
+            headers=auth_headers,
+        )
+        assert response.status_code == 404
 
 
 class TestPublicTracking:

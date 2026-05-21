@@ -225,14 +225,9 @@ class ParcelService:
         updated = []
         for step in history:
             if step.step in ordered and ordered.index(step.step) <= target_index:
-                updated.append(
-                    TrackingEvent(
-                        **step.model_dump(),
-                        completed=True,
-                        date=step.date or current_date,
-                        time=step.time or current_time,
-                    )
-                )
+                data = step.model_dump()
+                data.update(completed=True, date=step.date or current_date, time=step.time or current_time)
+                updated.append(TrackingEvent(**data))
             else:
                 updated.append(step)
         return updated
