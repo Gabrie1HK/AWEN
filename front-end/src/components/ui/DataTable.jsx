@@ -5,12 +5,13 @@ export default function DataTable({ columns, data, pageSize = 10, totalItems, on
   const [clientPage, setClientPage] = useState(1)
   const [sortKey, setSortKey] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
+  const safeData = Array.isArray(data) ? data : []
 
   const currentPage = isServerPaginated ? currentPageProp : clientPage
 
   const sorted = useMemo(() => {
-    if (!sortKey) return data
-    return [...data].sort((a, b) => {
+    if (!sortKey) return safeData
+    return [...safeData].sort((a, b) => {
       const av = a[sortKey], bv = b[sortKey]
       if (av == null) return 1
       if (bv == null) return -1

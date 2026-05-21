@@ -54,8 +54,9 @@ export function AuthProvider({ children }) {
     } catch {
       const found = MOCK_USERS[email]
       if (found && password === '123456') {
+        setAuthToken('mock-token')
         setUser(found)
-        saveSession(found, null)
+        saveSession(found, 'mock-token')
         return found
       }
       return null

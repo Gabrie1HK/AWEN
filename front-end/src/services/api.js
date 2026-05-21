@@ -143,6 +143,10 @@ async function requestForm(path, formData) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
     throw new Error(err.detail?.message || err.message || 'Error de red')
   }
+  const ct = res.headers.get('content-type') || ''
+  if (ct.includes('text/html')) {
+    throw new Error('Respuesta inesperada del servidor')
+  }
   return res.json()
 }
 

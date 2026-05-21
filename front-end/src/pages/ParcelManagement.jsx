@@ -251,7 +251,7 @@ export default function ParcelManagement() {
               <button className="btn btn-primary" onClick={() => {
                 const f = formRef.current
                 if (!f) return
-                const get = (n) => f.elements[n]?.value || ''
+                const get = (n) => { const el = f.elements[n]; return el ? el.value || '' : '' }
                 const data = {
                   sender: get('sender'), senderId: get('senderId'), senderPhone: get('senderPhone'),
                   recipient: get('recipient'), recipientId: get('recipientId'), recipientPhone: get('recipientPhone'),
