@@ -56,6 +56,7 @@ export default function Reports() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
       {loading ? <LoadingSpinner /> : (
+      <>
       <div className="report-filters">
         <label>
           Desde: <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
@@ -159,6 +160,7 @@ export default function Reports() {
           <DataTable columns={routeColumns} data={routes} />
         </div>
       </div>
+      </>
       )}
     </div>
   )

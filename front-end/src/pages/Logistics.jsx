@@ -34,6 +34,7 @@ export default function Logistics() {
     <div className="logistics-layout">
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
       {loading ? <LoadingSpinner /> : (
+      <>
       <div className="logistics-panel">
         <h3>Lotes Pendientes</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' }}>
@@ -128,6 +129,7 @@ export default function Logistics() {
           </div>
         </div>
       </div>
+      </>
       )}
     </div>
   )

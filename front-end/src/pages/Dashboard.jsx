@@ -65,6 +65,7 @@ export default function Dashboard() {
 
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
       {loading ? <LoadingSpinner /> : (
+      <>
       <div className="dashboard-charts">
         <div className="chart-card">
           <h3>Envíos Últimos 7 Días</h3>
@@ -109,6 +110,7 @@ export default function Dashboard() {
         <h3 style={{ marginBottom: 'var(--space-md)' }}>Actividad Reciente</h3>
         <DataTable columns={activityColumns} data={activity} />
       </div>
+      </>
       )}
     </div>
   )

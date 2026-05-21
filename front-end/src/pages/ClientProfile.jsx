@@ -49,6 +49,7 @@ export default function ClientProfile() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
       {loading ? <LoadingSpinner /> : (
+      <>
       <div className="kpi-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
         <div className="chart-card">
           <h3 style={{ marginBottom: 'var(--space-md)' }}>Mi Perfil</h3>
@@ -162,6 +163,7 @@ export default function ClientProfile() {
           </div>
         </div>
       )}
+      </>
       )}
     </div>
   )
