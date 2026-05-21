@@ -24,6 +24,9 @@ async function request(path, options = {}) {
   if (ct.includes('application/json')) {
     return res.json()
   }
+  if (ct.includes('text/html')) {
+    throw new Error('Respuesta inesperada del servidor')
+  }
   return res.text()
 }
 

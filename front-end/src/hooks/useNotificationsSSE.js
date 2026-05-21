@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { getAuthToken } from '../services/api'
 
 export function useNotificationsSSE() {
   const [notifications, setNotifications] = useState([])
@@ -6,10 +7,10 @@ export function useNotificationsSSE() {
   const eventSourceRef = useRef(null)
 
   useEffect(() => {
-    const token = localStorage.getItem('session_token')
+    const token = getAuthToken()
     if (!token) return
 
-    const url = `http://localhost:8000/api/v1/notifications/stream?token=${encodeURIComponent(token)}`
+    const url = `/api/v1/notifications/stream?token=${encodeURIComponent(token)}`
     const es = new EventSource(url)
     eventSourceRef.current = es
 
@@ -18,7 +19,13 @@ export function useNotificationsSSE() {
         const parsed = JSON.parse(event.data)
         if (parsed.type === 'ping') return
         if (parsed.type === 'notification' && parsed.data) {
-          setNotifications(prev => [parsed.data, ...prev])
+          const n = parsed.data
+          setNotifications(prev => [{
+            id: n.id || String(Date.now()),
+            text: n.message || n.text || '',
+            time: n.created_at || n.time || 'Ahora',
+            read: false,
+          }, ...prev])
           setUnreadCount(prev => prev + 1)
         }
       } catch {
@@ -36,5 +43,15 @@ export function useNotificationsSSE() {
     }
   }, [])
 
-  return { notifications, unreadCount }
+  const markRead = (id) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    setUnreadCount(prev => Math.max(0, prev - 1))
+  }
+
+  const markAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    setUnreadCount(0)
+  }
+
+  return { notifications, unreadCount, markRead, markAllRead }
 }
