@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import { users as mockUsers, branches as mockBranches } from '../data/mockData'
 import { usersApi, branchesApi } from '../services/api'
 import RoleBadge from '../components/ui/RoleBadge'
 import DataTable from '../components/ui/DataTable'
@@ -43,15 +42,15 @@ const columns = (onEdit, onDelete) => [
 ]
 
 const PAGE_SIZE = 10
-
 export default function UserManagement() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [editUser, setEditUser] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
-  const [userList, setUserList] = useState(mockUsers)
-  const [branchList, setBranchList] = useState(mockBranches)
-  const [totalUsers, setTotalUsers] = useState(mockUsers.length)
+
+  const [userList, setUserList] = useState([])
+  const [branchList, setBranchList] = useState([])
+  const [totalUsers, setTotalUsers] = useState(0)
   const [page, setPage] = useState(1)
   const { loading, error, setError, execute } = useApi()
 
@@ -153,18 +152,14 @@ export default function UserManagement() {
                 if (editUser?.id) {
                   usersApi.update(editUser.id, data)
                     .then(r => setUserList(prev => prev.map(u => u.id === editUser.id ? r : u)))
-                    .catch(() => setUserList(prev => prev.map(u => u.id === editUser.id ? { ...u, ...data } : u)))
+                    .catch(() => setError('No se pudo actualizar el usuario'))
                 } else {
                   usersApi.create(data)
                     .then(r => {
                       setUserList(prev => [r, ...prev.slice(0, PAGE_SIZE - 1)])
                       setTotalUsers(t => t + 1)
                     })
-                    .catch(() => {
-                      const newU = { ...data, id: Date.now(), phone: '', lastLogin: '-' }
-                      setUserList(prev => [newU, ...prev.slice(0, PAGE_SIZE - 1)])
-                      setTotalUsers(t => t + 1)
-                    })
+                    .catch(() => setError('No se pudo crear el usuario'))
                 }
                 setEditUser(null)
               }}>
@@ -184,7 +179,7 @@ export default function UserManagement() {
           const target = deleteTarget
           usersApi.delete(target.id)
             .then(() => { setUserList(prev => prev.filter(u => u.id !== target.id)); setTotalUsers(t => t - 1) })
-            .catch(() => { setUserList(prev => prev.filter(u => u.id !== target.id)); setTotalUsers(t => t - 1) })
+            .catch(() => setError('No se pudo eliminar el usuario'))
           setDeleteTarget(null)
         }}
         onCancel={() => setDeleteTarget(null)}

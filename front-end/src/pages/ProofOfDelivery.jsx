@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { deliveries as mockDeliveries } from '../data/mockData'
 import { deliveriesApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTable from '../components/ui/DataTable'
@@ -24,8 +23,8 @@ const PAGE_SIZE = 10
 
 export default function ProofOfDelivery() {
   const [selected, setSelected] = useState(null)
-  const [deliveryList, setDeliveryList] = useState(mockDeliveries)
-  const [totalDeliveries, setTotalDeliveries] = useState(mockDeliveries.length)
+  const [deliveryList, setDeliveryList] = useState([])
+  const [totalDeliveries, setTotalDeliveries] = useState(0)
   const [page, setPage] = useState(1)
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)

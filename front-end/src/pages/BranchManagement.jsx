@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import { branches as mockBranches } from '../data/mockData'
 import { branchesApi } from '../services/api'
 import DataTable from '../components/ui/DataTable'
 import SearchBar from '../components/ui/SearchBar'
@@ -38,13 +37,13 @@ const columns = (onEdit, onDelete) => [
 ]
 
 const PAGE_SIZE = 10
-
 export default function BranchManagement() {
   const [search, setSearch] = useState('')
   const [editBranch, setEditBranch] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
-  const [branchList, setBranchList] = useState(mockBranches)
-  const [totalBranches, setTotalBranches] = useState(mockBranches.length)
+
+  const [branchList, setBranchList] = useState([])
+  const [totalBranches, setTotalBranches] = useState(0)
   const [page, setPage] = useState(1)
   const { loading, error, setError, execute } = useApi()
 
@@ -134,18 +133,14 @@ export default function BranchManagement() {
                 if (editBranch?.id) {
                   branchesApi.update(editBranch.id, data)
                     .then(r => setBranchList(prev => prev.map(b => b.id === editBranch.id ? r : b)))
-                    .catch(() => setBranchList(prev => prev.map(b => b.id === editBranch.id ? { ...b, ...data } : b)))
+                    .catch(() => setError('No se pudo actualizar la sucursal'))
                 } else {
                   branchesApi.create(data)
                     .then(r => {
                       setBranchList(prev => [r, ...prev.slice(0, PAGE_SIZE - 1)])
                       setTotalBranches(t => t + 1)
                     })
-                    .catch(() => {
-                      const newB = { ...data, id: Date.now() }
-                      setBranchList(prev => [newB, ...prev.slice(0, PAGE_SIZE - 1)])
-                      setTotalBranches(t => t + 1)
-                    })
+                    .catch(() => setError('No se pudo crear la sucursal'))
                 }
                 setEditBranch(null)
               }}>
@@ -165,7 +160,7 @@ export default function BranchManagement() {
           const target = deleteTarget
           branchesApi.delete(target.id)
             .then(() => { setBranchList(prev => prev.filter(b => b.id !== target.id)); setTotalBranches(t => t - 1) })
-            .catch(() => { setBranchList(prev => prev.filter(b => b.id !== target.id)); setTotalBranches(t => t - 1) })
+            .catch(() => setError('No se pudo eliminar la sucursal'))
           setDeleteTarget(null)
         }}
         onCancel={() => setDeleteTarget(null)}

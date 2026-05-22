@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { parcels as mockParcels, branches as mockBranches } from '../data/mockData'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { parcelsApi, branchesApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTable from '../components/ui/DataTable'
@@ -51,16 +50,16 @@ const parcelsColumns = (onView, onEdit, onCancel) => [
 ]
 
 const PAGE_SIZE = 10
-
 export default function ParcelManagement() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [selectedParcel, setSelectedParcel] = useState(null)
   const [cancelTarget, setCancelTarget] = useState(null)
   const [showForm, setShowForm] = useState(false)
-  const [parcelList, setParcelList] = useState(mockParcels)
-  const [branchList, setBranchList] = useState(mockBranches)
-  const [totalParcels, setTotalParcels] = useState(mockParcels.length)
+
+  const [parcelList, setParcelList] = useState([])
+  const [branchList, setBranchList] = useState([])
+  const [totalParcels, setTotalParcels] = useState(0)
   const [page, setPage] = useState(1)
   const formRef = useRef(null)
   const { loading, error, setError, execute } = useApi()
@@ -263,20 +262,14 @@ export default function ParcelManagement() {
                 if (selectedParcel) {
                   parcelsApi.update(selectedParcel.id, data)
                     .then(r => { setParcelList(prev => prev.map(p => p.id === selectedParcel.id ? r : p)) })
-                    .catch(() => { setParcelList(prev => prev.map(p => p.id === selectedParcel.id ? { ...p, ...data } : p)) })
+                    .catch(() => setError('No se pudo actualizar la encomienda'))
                 } else {
                   parcelsApi.create(data)
                     .then(r => {
                       setParcelList(prev => [r, ...prev.slice(0, PAGE_SIZE - 1)])
                       setTotalParcels(t => t + 1)
                     })
-                    .catch(() => {
-                      const now = new Date().toISOString().slice(0, 10)
-                      const idx = Date.now()
-                      const newParcel = { ...data, id: 'ENV-' + idx, guide: 'AWEN-2026-' + idx, status: 'Registered', createdAt: now, updatedAt: now, qrData: '', barcode: '' }
-                      setParcelList(prev => [newParcel, ...prev.slice(0, PAGE_SIZE - 1)])
-                      setTotalParcels(t => t + 1)
-                    })
+                    .catch(() => setError('No se pudo crear la encomienda'))
                 }
                 setShowForm(false); setSelectedParcel(null)
               }}>
@@ -296,7 +289,7 @@ export default function ParcelManagement() {
           const target = cancelTarget
           parcelsApi.cancel(target.id)
             .then(r => setParcelList(prev => prev.map(p => p.id === target.id ? r : p)))
-            .catch(() => setParcelList(prev => prev.map(p => p.id === target.id ? { ...p, status: 'Cancelled' } : p)))
+            .catch(() => setError('No se pudo cancelar la encomienda'))
           setCancelTarget(null)
         }}
         onCancel={() => setCancelTarget(null)}

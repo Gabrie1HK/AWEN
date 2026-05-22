@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { parcels as mockParcels, trackingHistory as mockHistory } from '../data/mockData'
 import { parcelsApi, trackingApi, usersApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import StepperTimeline from '../components/ui/StepperTimeline'
@@ -19,12 +18,7 @@ export default function ClientProfile() {
   const [message, setMessage] = useState('')
   const [selectedGuide, setSelectedGuide] = useState(null)
   const [tracking, setTracking] = useState(null)
-  const [myParcels, setMyParcels] = useState(() =>
-    mockParcels.filter(p =>
-      p.sender.toLowerCase().includes(user?.name?.toLowerCase() || '') ||
-      p.recipient.toLowerCase().includes(user?.name?.toLowerCase() || '')
-    )
-  )
+  const [myParcels, setMyParcels] = useState([])
   const { loading, error, setError, execute } = useApi()
 
   useEffect(() => {
@@ -42,7 +36,7 @@ export default function ClientProfile() {
     setSelectedGuide(guide)
     trackingApi.publicTrack(guide)
       .then(res => setTracking(res.tracking || res))
-      .catch(() => setTracking(mockHistory[guide] || null))
+      .catch(() => setTracking(null))
   }
 
   return (

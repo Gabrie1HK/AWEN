@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { logisticsBatches as mockBatches, vehicles as mockVehicles, parcels as mockParcels } from '../data/mockData'
 import { logisticsApi, parcelsApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
@@ -8,9 +7,9 @@ import { useApi } from '../hooks/useApi'
 
 export default function Logistics() {
   const [selectedParcels, setSelectedParcels] = useState([])
-  const [batches, setBatches] = useState(mockBatches)
-  const [vehicleList, setVehicleList] = useState(mockVehicles)
-  const [parcelList, setParcelList] = useState(mockParcels)
+  const [batches, setBatches] = useState([])
+  const [vehicleList, setVehicleList] = useState([])
+  const [parcelList, setParcelList] = useState([])
 
   const allParcels = parcelList.filter(p => p.status === 'Registered' || p.status === 'At Destination Branch')
   const { loading, error, setError, execute } = useApi()
@@ -93,7 +92,7 @@ export default function Logistics() {
               if (targetBatch) {
                 logisticsApi.assignBatch(targetBatch.id, { parcels: selectedParcels })
                   .then(() => setBatches(prev => prev.map(b => b.id === targetBatch.id ? { ...b, parcels: [...b.parcels, ...selectedParcels], parcelCount: b.parcelCount + selectedParcels.length } : b)))
-                  .catch(() => setBatches(prev => prev.map(b => b.id === targetBatch.id ? { ...b, parcels: [...b.parcels, ...selectedParcels], parcelCount: b.parcelCount + selectedParcels.length } : b)))
+                  .catch(() => setError('No se pudo asignar el lote'))
                 setSelectedParcels([])
               }
             }}>

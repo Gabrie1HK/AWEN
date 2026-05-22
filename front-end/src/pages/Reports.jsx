@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react'
-import { reportSummary as mockSummary, dailyShipments as mockDaily, deliveriesByBranch as mockBranch, parcels as mockParcels, topRoutes as mockRoutes } from '../data/mockData'
 import { reportsApi, parcelsApi } from '../services/api'
 import StatCard from '../components/ui/StatCard'
 import DataTable from '../components/ui/DataTable'
@@ -24,11 +23,11 @@ const routeColumns = [
 export default function Reports() {
   const [dateFrom, setDateFrom] = useState('2026-05-01')
   const [dateTo, setDateTo] = useState('2026-05-13')
-  const [summary, setSummary] = useState(mockSummary)
-  const [daily, setDaily] = useState(mockDaily)
-  const [branchData, setBranchData] = useState(mockBranch)
-  const [parcelList, setParcelList] = useState(mockParcels)
-  const [routes, setRoutes] = useState(mockRoutes)
+  const [summary, setSummary] = useState({ totalVolume: 0, avgDeliveryTime: '-', successRate: '0%', returnRate: '0%' })
+  const [daily, setDaily] = useState([])
+  const [branchData, setBranchData] = useState([])
+  const [parcelList, setParcelList] = useState([])
+  const [routes, setRoutes] = useState([])
   const { loading, error, setError, execute } = useApi()
 
   const statusCounts = useMemo(() => ({
@@ -66,15 +65,17 @@ export default function Reports() {
         </label>
         <button className="btn btn-outline">Filtrar</button>
         <button className="btn btn-primary" style={{ marginLeft: 'auto' }} onClick={async () => {
-          try {
-            const csv = await reportsApi.exportCsv()
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url; a.download = `reporte-awen-${dateFrom}-${dateTo}.csv`
-            a.click(); URL.revokeObjectURL(url)
-          } catch { /* silent fallback */ }
-        }}>
+            try {
+              const csv = await reportsApi.exportCsv()
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url; a.download = `reporte-awen-${dateFrom}-${dateTo}.csv`
+              a.click(); URL.revokeObjectURL(url)
+            } catch {
+              setError('No se pudo exportar el reporte')
+            }
+          }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           Exportar
         </button>

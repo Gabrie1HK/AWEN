@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { dashboardKPIs as mockKPIs, dailyShipments as mockDaily, deliveriesByBranch as mockBranch, recentActivity as mockActivity } from '../data/mockData'
 import { dashboardApi } from '../services/api'
 import StatCard from '../components/ui/StatCard'
 import DataTable from '../components/ui/DataTable'
@@ -14,10 +13,10 @@ const activityColumns = [
 ]
 
 export default function Dashboard() {
-  const [kpis, setKpis] = useState(mockKPIs)
-  const [daily, setDaily] = useState(mockDaily)
-  const [branchData, setBranchData] = useState(mockBranch)
-  const [activity, setActivity] = useState(mockActivity)
+  const [kpis, setKpis] = useState({ totalShipments: 0, inTransit: 0, delivered: 0, returned: 0 })
+  const [daily, setDaily] = useState([])
+  const [branchData, setBranchData] = useState([])
+  const [activity, setActivity] = useState([])
 
   const { loading, error, setError, execute } = useApi()
 

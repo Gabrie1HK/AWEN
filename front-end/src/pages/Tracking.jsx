@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { parcels as mockParcels, trackingHistory as mockHistory } from '../data/mockData'
 import { parcelsApi, trackingApi } from '../services/api'
 import StepperTimeline from '../components/ui/StepperTimeline'
 import StatusBadge from '../components/ui/StatusBadge'
@@ -21,14 +20,8 @@ export default function Tracking() {
         setHistory(data.tracking || null)
       })
       .catch(() => {
-        const parcel = mockParcels.find(p => p.guide === guide.trim())
-        if (parcel) {
-          setResult(parcel)
-          setHistory(mockHistory[parcel.guide] || null)
-        } else {
-          setResult(null)
-          setHistory(null)
-        }
+        setResult(null)
+        setHistory(null)
       })
   }
 

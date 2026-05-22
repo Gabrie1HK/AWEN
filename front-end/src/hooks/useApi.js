@@ -13,6 +13,8 @@ export function useApi(initialData = null) {
       setData(result)
       return result
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error de red'
+      setError(message)
       return null
     } finally {
       setLoading(false)
