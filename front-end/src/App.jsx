@@ -1,22 +1,24 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './hooks/useAuth'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 import AppLayout from './components/layout/AppLayout'
-import Landing from './pages/Landing'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import ParcelManagement from './pages/ParcelManagement'
-import Tracking from './pages/Tracking'
-import Logistics from './pages/Logistics'
-import ProofOfDelivery from './pages/ProofOfDelivery'
-import Reports from './pages/Reports'
-import UserManagement from './pages/UserManagement'
-import BranchManagement from './pages/BranchManagement'
-import ClientProfile from './pages/ClientProfile'
-import DriverDashboard from './pages/DriverDashboard'
 import './components/ui/components.css'
 import './pages/pages.css'
+
+const Landing = lazy(() => import('./pages/Landing'))
+const Login = lazy(() => import('./pages/Login'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const ParcelManagement = lazy(() => import('./pages/ParcelManagement'))
+const Tracking = lazy(() => import('./pages/Tracking'))
+const Logistics = lazy(() => import('./pages/Logistics'))
+const ProofOfDelivery = lazy(() => import('./pages/ProofOfDelivery'))
+const Reports = lazy(() => import('./pages/Reports'))
+const UserManagement = lazy(() => import('./pages/UserManagement'))
+const BranchManagement = lazy(() => import('./pages/BranchManagement'))
+const ClientProfile = lazy(() => import('./pages/ClientProfile'))
+const DriverDashboard = lazy(() => import('./pages/DriverDashboard'))
 
 function ProtectedRoute({ children, path }) {
   const { user, canAccess } = useAuth()
@@ -36,6 +38,11 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ErrorBoundary>
+        <Suspense fallback={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 32, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            <div className="spinner" />
+          </div>
+        }>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
@@ -57,6 +64,7 @@ export default function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
         </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
