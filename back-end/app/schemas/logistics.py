@@ -15,10 +15,10 @@ class BatchStatus(str, Enum):
 
 
 class VehicleBase(AppBaseModel):
-    plate: str
-    model: str
-    capacity: str
-    driver: str
+    plate: str = Field(..., min_length=1, max_length=20)
+    model: str = Field(..., min_length=1, max_length=80)
+    capacity: str = Field(..., min_length=1, max_length=40)
+    driver: str = Field(..., min_length=1, max_length=120)
 
 
 class VehicleCreate(VehicleBase):

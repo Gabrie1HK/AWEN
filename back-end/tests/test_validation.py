@@ -44,7 +44,7 @@ class TestParcelValidation:
         response = client.post("/api/v1/parcels", headers=auth_headers, json=payload)
         assert response.status_code == 422
 
-    def test_create_parcel_negative_weight_allowed_by_schema(self, client, auth_headers):
+    def test_create_parcel_negative_weight_rejected(self, client, auth_headers):
         payload = {
             "sender": "Test",
             "senderId": "76.123.456-7",
@@ -61,7 +61,7 @@ class TestParcelValidation:
             "description": "Test",
         }
         response = client.post("/api/v1/parcels", headers=auth_headers, json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 422
 
     def test_update_parcel_invalid_status(self, client, auth_headers):
         response = client.patch(
@@ -79,7 +79,7 @@ class TestParcelValidation:
         )
         assert response.status_code == 422
 
-    def test_create_parcel_empty_sender_id_allowed_by_schema(self, client, auth_headers):
+    def test_create_parcel_empty_sender_id_rejected(self, client, auth_headers):
         payload = {
             "sender": "Test",
             "senderId": "",
@@ -96,7 +96,7 @@ class TestParcelValidation:
             "description": "Test",
         }
         response = client.post("/api/v1/parcels", headers=auth_headers, json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 422
 
 
 class TestUserValidation:

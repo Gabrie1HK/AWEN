@@ -211,6 +211,39 @@ describe('trackingApi', () => {
   })
 })
 
+describe('requestForm', () => {
+  beforeEach(() => { mockFetch.mockReset(); setAuthToken('t') })
+
+  it('sends POST with FormData', async () => {
+    mockFetch.mockResolvedValue(mockJsonResponse({ url: '/uploads/test.pdf' }))
+    const fd = new FormData()
+    fd.append('file', 'test')
+    const result = await deliveriesApi.uploadEvidence('DEL-001', fd.get('file'))
+    expect(mockFetch.mock.calls[0][1].method).toBe('POST')
+    expect(mockFetch.mock.calls[0][0]).toContain('/deliveries/DEL-001/upload')
+  })
+
+  it('throws on HTML response', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: () => 'text/html' },
+      json: () => Promise.resolve({}),
+      text: () => Promise.resolve('<html>Vercel SPA</html>'),
+    })
+    const fd = new FormData()
+    fd.append('file', 'test')
+    await expect(deliveriesApi.uploadEvidence('DEL-001', fd.get('file'))).rejects.toThrow('Respuesta inesperada del servidor')
+  })
+
+  it('throws on network error', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'))
+    const fd = new FormData()
+    fd.append('file', 'test')
+    await expect(deliveriesApi.uploadEvidence('DEL-001', fd.get('file'))).rejects.toThrow()
+  })
+})
+
 describe('notificationsApi', () => {
   beforeEach(() => { mockFetch.mockReset(); setAuthToken('t') })
 

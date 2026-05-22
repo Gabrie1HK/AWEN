@@ -16,12 +16,12 @@ class UserRole(str, Enum):
 
 
 class UserBase(AppBaseModel):
-    name: str
-    email: str
+    name: str = Field(..., min_length=1, max_length=120)
+    email: str = Field(..., min_length=3, max_length=120)
     role: UserRole
-    branch: Optional[str] = None
-    phone: Optional[str] = None
-    address: Optional[str] = None
+    branch: Optional[str] = Field(default=None, max_length=120)
+    phone: Optional[str] = Field(default=None, max_length=40)
+    address: Optional[str] = Field(default=None, max_length=200)
     active: bool = True
     last_login: Optional[str] = Field(default=None, alias="lastLogin")
 

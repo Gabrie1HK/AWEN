@@ -19,19 +19,19 @@ class ParcelStatus(str, Enum):
 
 
 class ParcelBase(AppBaseModel):
-    sender: str
-    sender_id: str = Field(..., alias="senderId")
-    sender_phone: str = Field(..., alias="senderPhone")
-    recipient: str
-    recipient_id: str = Field(..., alias="recipientId")
-    recipient_phone: str = Field(..., alias="recipientPhone")
-    recipient_address: str = Field(..., alias="recipientAddress")
-    origin_branch: str = Field(..., alias="originBranch")
-    destination_branch: str = Field(..., alias="destinationBranch")
-    weight: float
-    dimensions: str
-    declared_value: int = Field(..., alias="declaredValue")
-    description: str
+    sender: str = Field(..., min_length=1, max_length=120)
+    sender_id: str = Field(..., min_length=1, max_length=40, alias="senderId")
+    sender_phone: str = Field(..., min_length=1, max_length=40, alias="senderPhone")
+    recipient: str = Field(..., min_length=1, max_length=120)
+    recipient_id: str = Field(..., min_length=1, max_length=40, alias="recipientId")
+    recipient_phone: str = Field(..., min_length=1, max_length=40, alias="recipientPhone")
+    recipient_address: str = Field(..., min_length=1, max_length=200, alias="recipientAddress")
+    origin_branch: str = Field(..., min_length=1, max_length=120, alias="originBranch")
+    destination_branch: str = Field(..., min_length=1, max_length=120, alias="destinationBranch")
+    weight: float = Field(..., gt=0)
+    dimensions: str = Field(..., min_length=1, max_length=60)
+    declared_value: int = Field(..., ge=0, alias="declaredValue")
+    description: str = Field(..., min_length=1, max_length=200)
 
 
 class ParcelCreate(ParcelBase):
