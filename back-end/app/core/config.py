@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import List
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,6 +29,13 @@ class AppSettings(BaseSettings):
     rate_limit_max: int = 100
     rate_limit_window: int = 60
     database_url: str = "postgresql+psycopg://postgres:CHANGE_ME@localhost:5432/awen_db"
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v):
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
 
 
 @lru_cache
