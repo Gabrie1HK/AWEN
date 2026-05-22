@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class AppSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="AWEN_", case_sensitive=False)
+    model_config = SettingsConfigDict(env_prefix="AWEN_", case_sensitive=False, env_file=".env")
 
     project_name: str = "AWEN API"
     version: str = "0.1.0"
