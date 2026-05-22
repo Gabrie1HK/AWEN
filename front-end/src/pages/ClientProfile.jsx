@@ -115,7 +115,7 @@ export default function ClientProfile() {
         {myParcels.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No tienes envios registrados.</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-medium)', textAlign: 'left', fontSize: '0.813rem', color: 'var(--text-secondary)' }}>
                 <th style={{ padding: '8px 12px' }}>Guia</th>
@@ -129,11 +129,11 @@ export default function ClientProfile() {
             <tbody>
               {myParcels.map(p => (
                 <tr key={p.id} style={{ borderBottom: '1px solid var(--border-medium)', cursor: 'pointer' }} onClick={() => handleTrack(p.guide)}>
-                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>{p.guide}</td>
-                  <td style={{ padding: '10px 12px' }}>{p.originBranch}</td>
-                  <td style={{ padding: '10px 12px' }}>{p.destinationBranch}</td>
-                  <td style={{ padding: '10px 12px' }}><StatusBadge status={p.status} /></td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{p.createdAt}</td>
+                  <td data-label="Guia" style={{ padding: '10px 12px', fontWeight: 600 }}>{p.guide}</td>
+                  <td data-label="Origen" style={{ padding: '10px 12px' }}>{p.originBranch}</td>
+                  <td data-label="Destino" style={{ padding: '10px 12px' }}>{p.destinationBranch}</td>
+                  <td data-label="Estado" style={{ padding: '10px 12px' }}><StatusBadge status={p.status} /></td>
+                  <td data-label="Fecha" style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{p.createdAt}</td>
                   <td style={{ padding: '10px 12px' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--accent-primary)' }}>
                       <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>

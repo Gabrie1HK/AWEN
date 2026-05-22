@@ -14,7 +14,7 @@ class NotificationService:
     async def list(self) -> List[NotificationSchema]:
         return await self._repo.list()
 
-    async def create(self, text: str, action_type: str, related_id: Optional[str] = None, user_id: Optional[str] = None) -> NotificationSchema:
+    async def create(self, text: str, action_type: str, related_id: Optional[str] = None, user_id: Optional[int] = None) -> NotificationSchema:
         payload = NotificationCreate(text=text, action_type=action_type, related_id=related_id, user_id=user_id)
         result = await self._repo.create(payload)
         await broadcaster.publish({

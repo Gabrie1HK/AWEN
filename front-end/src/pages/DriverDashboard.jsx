@@ -105,7 +105,7 @@ export default function DriverDashboard() {
       <>
       {!selected ? (
         <div className="chart-card">
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-medium)', textAlign: 'left', fontSize: '0.813rem', color: 'var(--text-secondary)' }}>
                 <th style={{ padding: '8px 12px' }}>Guia</th>
@@ -118,10 +118,10 @@ export default function DriverDashboard() {
             <tbody>
               {parcels.map(p => (
                 <tr key={p.id} style={{ borderBottom: '1px solid var(--border-medium)' }}>
-                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>{p.guide}</td>
-                  <td style={{ padding: '10px 12px' }}>{p.recipient}</td>
-                  <td style={{ padding: '10px 12px', fontSize: '0.875rem' }}>{p.originBranch} → {p.destinationBranch}</td>
-                  <td style={{ padding: '10px 12px' }}><StatusBadge status={p.status} /></td>
+                  <td data-label="Guia" style={{ padding: '10px 12px', fontWeight: 600 }}>{p.guide}</td>
+                  <td data-label="Destinatario" style={{ padding: '10px 12px' }}>{p.recipient}</td>
+                  <td data-label="Ruta" style={{ padding: '10px 12px', fontSize: '0.875rem' }}>{p.originBranch} → {p.destinationBranch}</td>
+                  <td data-label="Estado" style={{ padding: '10px 12px' }}><StatusBadge status={p.status} /></td>
                   <td style={{ padding: '10px 12px' }}>
                     <button className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '4px 10px' }} onClick={() => handleView(p)}>Gestionar</button>
                   </td>

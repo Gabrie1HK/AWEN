@@ -7,7 +7,7 @@ from app.schemas.base import AppBaseModel
 
 class NotificationSchema(AppBaseModel):
     id: str
-    user_id: Optional[str] = None
+    user_id: Optional[int] = None
     text: str
     time: str
     created_at: str
@@ -20,4 +20,4 @@ class NotificationCreate(AppBaseModel):
     text: str
     action_type: str
     related_id: Optional[str] = None
-    user_id: Optional[str] = None
+    user_id: Optional[int] = None
