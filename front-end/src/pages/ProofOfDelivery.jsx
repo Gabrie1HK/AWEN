@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { deliveriesApi } from '../services/api'
+import { useAuth } from '../hooks/useAuth'
 import StatusBadge from '../components/ui/StatusBadge'
 import DataTable from '../components/ui/DataTable'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
@@ -22,6 +23,7 @@ const columns = (onView) => [
 const PAGE_SIZE = 10
 
 export default function ProofOfDelivery() {
+  const { user } = useAuth()
   const [selected, setSelected] = useState(null)
   const [deliveryList, setDeliveryList] = useState([])
   const [totalDeliveries, setTotalDeliveries] = useState(0)
@@ -39,11 +41,15 @@ export default function ProofOfDelivery() {
     execute(() => deliveriesApi.list({ page: p, pageSize: PAGE_SIZE }))
       .then(res => {
         if (res) {
-          setDeliveryList(res.data || res)
-          setTotalDeliveries(res.total || res.length || 0)
+          let list = res.data || res
+          if (user?.role === 'Driver' && user?.name) {
+            list = list.filter(d => d.driver === user.name)
+          }
+          setDeliveryList(list)
+          setTotalDeliveries(res.total || list.length || 0)
         }
       })
-  }, [execute])
+  }, [execute, user])
 
   useEffect(() => {
     fetchDeliveries(page)

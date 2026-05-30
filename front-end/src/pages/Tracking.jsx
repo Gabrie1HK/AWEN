@@ -12,6 +12,7 @@ export default function Tracking() {
   const [history, setHistory] = useState(null)
   const [routePath, setRoutePath] = useState(null)
   const [publicNotes, setPublicNotes] = useState(null)
+  const [deliveryEvidence, setDeliveryEvidence] = useState(null)
   const [notFound, setNotFound] = useState(false)
   const [mapState, setMapState] = useState({ status: 'idle', marker: null, route: null, message: '' })
   const [mapComponents, setMapComponents] = useState(null)
@@ -73,6 +74,7 @@ export default function Tracking() {
           setHistory(data.history || data.tracking || null)
           setRoutePath(data.route || null)
           setPublicNotes(data.public_notes || null)
+          setDeliveryEvidence(data.delivery_evidence || null)
           setNotFound(false)
         } else {
           setNotFound(true)
@@ -188,6 +190,22 @@ export default function Tracking() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {deliveryEvidence && (
+            <div className="tracking-map-section">
+              <h4>Comprobante de Entrega</h4>
+              <div className="tracking-parcel-details" style={{ marginTop: 8 }}>
+                <div><span>Conductor:</span> {deliveryEvidence.driver}</div>
+                <div><span>Fecha:</span> {deliveryEvidence.deliveryDate || '—'}</div>
+                <div><span>GPS:</span> {deliveryEvidence.gps || '—'}</div>
+              </div>
+              {deliveryEvidence.photoUrl && (
+                <div className="pod-image-wrapper" style={{ marginTop: 12 }}>
+                  <img src={deliveryEvidence.photoUrl} alt="Evidencia de entrega" className="pod-image" style={{ maxWidth: '100%', maxHeight: 300, borderRadius: 'var(--radius-md)' }} />
+                </div>
+              )}
             </div>
           )}
 

@@ -2,7 +2,10 @@ import asyncio
 import sys
 import time
 
+from pathlib import Path
+
 from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -67,6 +70,10 @@ def create_app() -> FastAPI:
         return response
 
     application.include_router(api_router, prefix=settings.api_v1_prefix)
+
+    upload_dir = Path(settings.upload_dir)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    application.mount("/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 
     return application
 

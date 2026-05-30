@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import Field
 
 from app.schemas.base import AppBaseModel
+from app.schemas.delivery import DeliveryPublic
 from app.schemas.parcel import ParcelStatus, PublicTrackingParcel
 from app.schemas.parcel_note import ParcelNotePublic
 
@@ -31,3 +32,4 @@ class PublicTrackingResponse(AppBaseModel):
     history: Optional[list[TrackingEvent]] = None
     route: Optional[list[dict]] = None
     public_notes: Optional[list[ParcelNotePublic]] = None
+    delivery_evidence: Optional[DeliveryPublic] = None

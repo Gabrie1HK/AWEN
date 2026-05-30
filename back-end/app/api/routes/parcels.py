@@ -1,5 +1,10 @@
-from fastapi import APIRouter, Depends, Query
+import uuid
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
 
 from app.core.dependencies import get_current_user, get_parcel_service
 from app.database.database import get_db
@@ -75,9 +80,9 @@ async def update_status(
     parcel_id: str,
     payload: ParcelStatusUpdate,
     service: ParcelService = Depends(get_parcel_service),
-    _user=Depends(get_current_user),
+    user=Depends(get_current_user),
 ) -> ParcelPublic:
-    return await service.update_status(parcel_id, payload)
+    return await service.update_status(parcel_id, payload, driver_name=user.name)
 
 
 @router.delete("/{parcel_id}", summary="Eliminar encomienda (admin)")
@@ -118,6 +123,26 @@ async def get_parcel_notes(
     _user=Depends(get_current_user),
 ) -> list[ParcelNotePublic]:
     return await service.get_notes(guide, db)
+
+
+@router.post("/upload-evidence", summary="Subir foto de evidencia (retorna URL)")
+async def upload_evidence(
+    file: UploadFile = File(...),
+    _user=Depends(get_current_user),
+) -> dict:
+    settings = get_settings()
+    upload_dir = Path(settings.upload_dir)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    ext = Path(file.filename).suffix if file.filename else ".bin"
+    filename = f"ev_{uuid.uuid4().hex}{ext}"
+    filepath = upload_dir / filename
+
+    content = await file.read()
+    filepath.write_bytes(content)
+
+    relative_url = f"/uploads/{filename}"
+    return {"filename": filename, "url": relative_url, "size": len(content)}
 
 
 @router.get("/{guide}/tracking", response_model=list[TrackingEvent])

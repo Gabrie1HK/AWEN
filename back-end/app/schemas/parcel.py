@@ -70,6 +70,8 @@ class ParcelUpdate(AppBaseModel):
 
 class ParcelStatusUpdate(AppBaseModel):
     status: ParcelStatus
+    photo_url: Optional[str] = Field(default=None, alias="photoUrl")
+    gps: Optional[str] = None
 
 
 class ParcelPublic(ParcelBase):

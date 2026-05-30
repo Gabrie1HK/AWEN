@@ -12,7 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import NotFoundError, ValidationError
 from app.core.pagination import paginate_with_meta
 from app.models.parcel_note import ParcelNote
+from app.repositories.deliveries import DeliveryRepository
 from app.repositories.parcels import ParcelRepository, TrackingRepository
+from app.schemas.delivery import DeliveryPublic, DeliveryStatus, DeliveryUpdate, PodType
 from app.schemas.parcel import (
     ParcelCreate,
     ParcelPublic,
@@ -27,10 +29,11 @@ from app.services.notifications import NotificationService
 
 
 class ParcelService:
-    def __init__(self, parcel_repo: ParcelRepository, tracking_repo: TrackingRepository, notifications: Optional[NotificationService] = None) -> None:
+    def __init__(self, parcel_repo: ParcelRepository, tracking_repo: TrackingRepository, notifications: Optional[NotificationService] = None, delivery_repo: Optional[DeliveryRepository] = None) -> None:
         self._parcels = parcel_repo
         self._tracking = tracking_repo
         self._notifications = notifications
+        self._delivery_repo = delivery_repo
         self._settings = get_settings()
 
     async def list(
@@ -139,7 +142,7 @@ class ParcelService:
             raise NotFoundError("Encomienda no encontrada")
         return refreshed
 
-    async def update_status(self, parcel_id: str, status_update: ParcelStatusUpdate) -> ParcelPublic:
+    async def update_status(self, parcel_id: str, status_update: ParcelStatusUpdate, driver_name: Optional[str] = None) -> ParcelPublic:
         existing = await self._parcels.get(parcel_id)
         if not existing:
             raise NotFoundError("Encomienda no encontrada")
@@ -156,6 +159,10 @@ class ParcelService:
         history = await self._tracking.list_by_guide(existing.guide)
         history = self._mark_tracking(history, status_update.status)
         await self._tracking.set_history(existing.guide, history)
+
+        if status_update.status == ParcelStatus.DELIVERED and self._delivery_repo:
+            await self._ensure_delivery_record(existing, status_update, driver_name)
+
         if self._notifications:
             await self._notifications.create(
                 text=f"Encomienda {existing.guide} actualizada a {status_update.status.value}",
@@ -163,6 +170,34 @@ class ParcelService:
                 related_id=parcel_id,
             )
         return refreshed
+
+    async def _ensure_delivery_record(self, parcel: ParcelPublic, status_update: ParcelStatusUpdate, driver_name: Optional[str] = None) -> None:
+        deliveries = await self._delivery_repo.list()
+        existing_delivery = next((d for d in deliveries if d.guide == parcel.guide), None)
+        if existing_delivery:
+            update = DeliveryUpdate(
+                photoUrl=status_update.photo_url or existing_delivery.photo_url,
+                gps=status_update.gps or existing_delivery.gps,
+                deliveryDate=datetime.now(timezone.utc).date().isoformat(),
+                status=DeliveryStatus.COMPLETED if (status_update.photo_url or existing_delivery.photo_url) else DeliveryStatus.PENDING,
+            )
+            await self._delivery_repo.update(existing_delivery.id, update)
+        else:
+            last_id = max((int(d.id.split("-")[-1]) for d in deliveries), default=0)
+            new_id = f"DEL-{last_id + 1:03d}"
+            driver = driver_name or "Conductor"
+            delivery = DeliveryPublic(
+                id=new_id,
+                guide=parcel.guide,
+                recipient=parcel.recipient,
+                driver=driver,
+                deliveryDate=datetime.now(timezone.utc).date().isoformat(),
+                podType=PodType.PHOTO,
+                status=DeliveryStatus.COMPLETED if status_update.photo_url else DeliveryStatus.PENDING,
+                photoUrl=status_update.photo_url,
+                gps=status_update.gps,
+            )
+            await self._delivery_repo.create(delivery)
 
     async def delete_parcel(self, parcel_id: str) -> None:
         existing = await self._parcels.get(parcel_id)
@@ -501,14 +536,4 @@ class ParcelService:
             raise ValidationError(
                 f"No se puede retroceder de {current.value} a {new.value}",
                 detail={"current": current.value, "new": new.value},
-            )
-
-        if new_idx > current_idx + 1:
-            raise ValidationError(
-                f"No se puede saltar de {current.value} a {new.value}. Debe pasar por {ordered[current_idx + 1].value}",
-                detail={
-                    "current": current.value,
-                    "new": new.value,
-                    "next_valid": ordered[current_idx + 1].value,
-                },
             )

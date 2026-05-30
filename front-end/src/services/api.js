@@ -58,13 +58,18 @@ export const parcelsApi = {
   get: (id) => request(`/parcels/${id}`),
   create: (data) => request('/parcels', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => request(`/parcels/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-  updateStatus: (id, status) => request(`/parcels/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) }),
+  updateStatus: (id, status, extra = {}) => request(`/parcels/${id}/status`, { method: 'POST', body: JSON.stringify({ status, ...extra }) }),
   cancel: (id) => request(`/parcels/${id}/cancel`, { method: 'POST' }),
   remove: (id) => request(`/parcels/${id}`, { method: 'DELETE' }),
   tracking: (guide) => request(`/parcels/${guide}/tracking`),
   myParcels: () => request('/parcels/my-parcels'),
   addNote: (guide, text, isPublic = false) => request(`/parcels/${guide}/notes`, { method: 'POST', body: JSON.stringify({ text, is_public: isPublic }) }),
   getNotes: (guide) => request(`/parcels/${guide}/notes`),
+  uploadEvidence: (file) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return requestForm('/parcels/upload-evidence', fd)
+  },
 }
 
 export const mapsApi = {

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_parcel_service
 from app.core.errors import NotFoundError
 from app.database.database import get_db
+from app.repositories.deliveries import SqlAlchemyDeliveryRepository
 from app.schemas.parcel import PublicTrackingParcel
 from app.schemas.tracking import PublicTrackingResponse
 from app.services.parcels import ParcelService
@@ -45,4 +46,12 @@ async def public_tracking(
         destination=(parcel.destination_lat, parcel.destination_lng) if parcel.destination_lat is not None and parcel.destination_lng is not None else None,
     )
     public_notes = await service.get_notes(guide, db, is_public_only=True)
-    return PublicTrackingResponse(guide=guide, parcel=public_parcel, history=history, route=route, public_notes=public_notes)
+
+    delivery_evidence = None
+    delivery_repo = SqlAlchemyDeliveryRepository(db)
+    all_deliveries = await delivery_repo.list()
+    delivery_match = next((d for d in all_deliveries if d.guide == guide), None)
+    if delivery_match:
+        delivery_evidence = delivery_match
+
+    return PublicTrackingResponse(guide=guide, parcel=public_parcel, history=history, route=route, public_notes=public_notes, delivery_evidence=delivery_evidence)

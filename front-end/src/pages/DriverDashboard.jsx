@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { parcelsApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
@@ -6,13 +6,14 @@ import StepperTimeline from '../components/ui/StepperTimeline'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import ErrorBanner from '../components/ui/ErrorBanner'
 import { useApi } from '../hooks/useApi'
+import { PARCEL_STATUS_LABELS } from '../utils/statusTranslations'
 
 const STATUS_OPTIONS = [
-  { value: 'Picked Up', label: 'Recogido' },
-  { value: 'In Transit', label: 'En Transito' },
-  { value: 'At Destination Branch', label: 'En Destino' },
-  { value: 'Out for Delivery', label: 'En Reparto' },
-  { value: 'Delivered', label: 'Entregado' },
+  { value: 'Picked Up', label: PARCEL_STATUS_LABELS['Picked Up'] },
+  { value: 'In Transit', label: PARCEL_STATUS_LABELS['In Transit'] },
+  { value: 'At Destination Branch', label: PARCEL_STATUS_LABELS['At Destination Branch'] },
+  { value: 'Out for Delivery', label: PARCEL_STATUS_LABELS['Out for Delivery'] },
+  { value: 'Delivered', label: PARCEL_STATUS_LABELS['Delivered'] },
 ]
 
 export default function DriverDashboard() {
@@ -25,6 +26,11 @@ export default function DriverDashboard() {
   const [noteIsPublic, setNoteIsPublic] = useState(false)
   const [drvNotes, setDrvNotes] = useState([])
   const [msg, setMsg] = useState('')
+  const [deliveryPhoto, setDeliveryPhoto] = useState(null)
+  const [deliveryPhotoUrl, setDeliveryPhotoUrl] = useState('')
+  const [deliveryGps, setDeliveryGps] = useState('')
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const fileRef = useRef(null)
   const { loading, error, setError, execute } = useApi()
 
   useEffect(() => {
@@ -44,6 +50,9 @@ export default function DriverDashboard() {
     setMsg('')
     setDrvNotes([])
     setTracking([])
+    setDeliveryPhoto(null)
+    setDeliveryPhotoUrl('')
+    setDeliveryGps('')
     parcelsApi.tracking(p.guide)
       .then(res => setTracking(res || []))
       .catch(() => setTracking([]))
@@ -52,13 +61,32 @@ export default function DriverDashboard() {
       .catch(() => {})
   }
 
+  const handleDeliveryPhotoChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setDeliveryPhoto(file)
+    setUploadingPhoto(true)
+    try {
+      const result = await parcelsApi.uploadEvidence(file)
+      setDeliveryPhotoUrl(result.url)
+      setMsg('Foto subida correctamente')
+      setTimeout(() => setMsg(''), 3000)
+    } catch {
+      setMsg('Error al subir la foto')
+    }
+    setUploadingPhoto(false)
+  }
+
+  const isDelivering = newStatus === 'Delivered'
+
   const handleUpdateStatus = () => {
     if (!newStatus || !selected) return
-    parcelsApi.updateStatus(selected.id, newStatus)
+    const extra = isDelivering ? { photoUrl: deliveryPhotoUrl || undefined, gps: deliveryGps || undefined } : {}
+    parcelsApi.updateStatus(selected.id, newStatus, extra)
       .then((updated) => {
         setParcels(prev => prev.map(p => p.id === selected.id ? updated : p))
         setSelected(updated)
-        setMsg('Estado actualizado correctamente')
+        setMsg(isDelivering ? 'Entrega registrada exitosamente' : 'Estado actualizado correctamente')
         return parcelsApi.tracking(updated.guide)
       })
       .then(res => setTracking(res || []))
@@ -148,12 +176,28 @@ export default function DriverDashboard() {
             <div className="chart-card">
               <h4 style={{ marginBottom: 12 }}>Actualizar Estado</h4>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <select value={newStatus} onChange={e => setNewStatus(e.target.value)} style={{ flex: 1, minWidth: 150 }}>
+                <select value={newStatus} onChange={e => { setNewStatus(e.target.value); if (e.target.value !== 'Delivered') { setDeliveryPhoto(null); setDeliveryPhotoUrl(''); setDeliveryGps('') } }} style={{ flex: 1, minWidth: 150 }}>
                   <option value="">Seleccionar...</option>
                   {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-                <button className="btn btn-primary" onClick={handleUpdateStatus} disabled={!newStatus}>Actualizar</button>
+                <button className="btn btn-primary" onClick={handleUpdateStatus} disabled={!newStatus || (isDelivering && uploadingPhoto)}>
+                  {isDelivering ? 'Confirmar Entrega' : 'Actualizar'}
+                </button>
               </div>
+              {isDelivering && (
+                <div style={{ marginTop: 12, padding: '12px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
+                  <h5 style={{ marginBottom: 8, fontSize: '0.813rem' }}>Evidencia de Entrega</h5>
+                  <div className="form-field" style={{ marginBottom: 8 }}>
+                    <label style={{ fontSize: '0.75rem' }}>Foto (obligatorio)</label>
+                    <input ref={fileRef} type="file" accept="image/*" style={{ fontSize: '0.75rem', width: '100%' }} onChange={handleDeliveryPhotoChange} />
+                    {deliveryPhotoUrl && <span style={{ fontSize: '0.75rem', color: 'var(--status-delivered)' }}>Foto lista</span>}
+                  </div>
+                  <div className="form-field">
+                    <label style={{ fontSize: '0.75rem' }}>GPS (opcional)</label>
+                    <input type="text" value={deliveryGps} onChange={e => setDeliveryGps(e.target.value)} placeholder="Ej: 10.4806, -66.9036" style={{ fontSize: '0.75rem', width: '100%' }} />
+                  </div>
+                </div>
+              )}
               {msg && <p style={{ marginTop: 8, fontSize: '0.813rem', color: 'var(--status-delivered)' }}>{msg}</p>}
             </div>
             <div className="chart-card">

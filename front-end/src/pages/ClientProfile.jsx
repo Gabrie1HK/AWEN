@@ -19,6 +19,7 @@ export default function ClientProfile() {
   const [selectedGuide, setSelectedGuide] = useState(null)
   const [tracking, setTracking] = useState(null)
   const [clientNotes, setClientNotes] = useState([])
+  const [deliveryEvidence, setDeliveryEvidence] = useState(null)
   const [myParcels, setMyParcels] = useState([])
   const [showCreate, setShowCreate] = useState(false)
   const [mapComponents, setMapComponents] = useState(null)
@@ -103,13 +104,13 @@ export default function ClientProfile() {
   const handleTrack = (guide) => {
     setSelectedGuide(guide)
     setClientNotes([])
-    parcelsApi.tracking(guide)
-      .then(res => setTracking(res || []))
-      .catch(() => {
-        trackingApi.publicTrack(guide)
-          .then(res => setTracking(res.history || res.tracking || res))
-          .catch(() => setTracking(null))
+    setDeliveryEvidence(null)
+    trackingApi.publicTrack(guide)
+      .then(res => {
+        setTracking(res.history || res.tracking || [])
+        setDeliveryEvidence(res.delivery_evidence || null)
       })
+      .catch(() => setTracking(null))
     parcelsApi.getNotes(guide)
       .then(res => setClientNotes(res || []))
       .catch(() => {})
@@ -118,8 +119,11 @@ export default function ClientProfile() {
   useEffect(() => {
     if (!selectedGuide) return undefined
     const refresh = () => {
-      parcelsApi.tracking(selectedGuide)
-        .then(res => setTracking(res || []))
+      trackingApi.publicTrack(selectedGuide)
+        .then(res => {
+          setTracking(res.history || res.tracking || [])
+          if (res.delivery_evidence) setDeliveryEvidence(res.delivery_evidence)
+        })
         .catch(() => {})
       parcelsApi.getNotes(selectedGuide)
         .then(res => setClientNotes(res || []))
@@ -360,6 +364,22 @@ export default function ClientProfile() {
             ) : (
               <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Historial no disponible.</p>
             )}
+            {deliveryEvidence && (
+              <div style={{ marginTop: 'var(--space-lg)' }}>
+                <h4 style={{ marginBottom: 8 }}>Comprobante de Entrega</h4>
+                <div style={{ fontSize: '0.813rem', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span>Conductor: {deliveryEvidence.driver}</span>
+                  <span>Fecha: {deliveryEvidence.deliveryDate || '—'}</span>
+                  <span>GPS: {deliveryEvidence.gps || '—'}</span>
+                </div>
+                {deliveryEvidence.photoUrl && (
+                  <div style={{ marginTop: 8 }}>
+                    <img src={deliveryEvidence.photoUrl} alt="Evidencia de entrega" style={{ maxWidth: '100%', maxHeight: 250, borderRadius: 'var(--radius-md)' }} />
+                  </div>
+                )}
+              </div>
+            )}
+
             {clientNotes.length > 0 && (
               <div style={{ marginTop: 'var(--space-lg)' }}>
                 <h4 style={{ marginBottom: 8 }}>Notificaciones del Conductor</h4>

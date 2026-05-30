@@ -37,7 +37,12 @@ def get_parcel_service(
     db: AsyncSession = Depends(get_db),
     notifications: NotificationService = Depends(get_notification_service),
 ) -> ParcelService:
-    return ParcelService(SqlAlchemyParcelRepository(db), SqlAlchemyTrackingRepository(db), notifications)
+    return ParcelService(
+        SqlAlchemyParcelRepository(db),
+        SqlAlchemyTrackingRepository(db),
+        notifications,
+        delivery_repo=SqlAlchemyDeliveryRepository(db),
+    )
 
 
 def get_logistics_service(
