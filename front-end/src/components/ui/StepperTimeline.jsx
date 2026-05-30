@@ -1,11 +1,6 @@
-const STEP_LABELS = {
-  Registered: 'Registrado',
-  'Picked Up': 'Recogido',
-  'In Transit': 'En Tránsito',
-  'At Destination Branch': 'En Sucursal Destino',
-  'Out for Delivery': 'En Reparto',
-  Delivered: 'Entregado',
-}
+import { PARCEL_STATUS_LABELS } from '../../utils/statusTranslations'
+
+const STEP_LABELS = PARCEL_STATUS_LABELS
 
 export default function StepperTimeline({ steps }) {
   return (

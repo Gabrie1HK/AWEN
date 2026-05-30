@@ -7,14 +7,20 @@ import ConfirmModal from '../components/ui/ConfirmModal'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import ErrorBanner from '../components/ui/ErrorBanner'
 import { useApi } from '../hooks/useApi'
+import { PARCEL_STATUS_LABELS } from '../utils/statusTranslations'
 
-const statusOptions = [
-  { value: 'Registered', label: 'Registrado' },
-  { value: 'In Transit', label: 'En Transito' },
-  { value: 'At Destination Branch', label: 'En Destino' },
-  { value: 'Delivered', label: 'Entregado' },
-  { value: 'Returned', label: 'Devuelto' },
-]
+const statusOptions = Object.entries(PARCEL_STATUS_LABELS)
+  .filter(([key]) => key !== 'Picked Up' && key !== 'Out for Delivery')
+  .map(([value, label]) => ({ value, label }))
+statusOptions.push(
+  { value: 'Picked Up', label: PARCEL_STATUS_LABELS['Picked Up'] },
+  { value: 'Out for Delivery', label: PARCEL_STATUS_LABELS['Out for Delivery'] },
+)
+// Reorder to match original order
+statusOptions.sort((a, b) => {
+  const order = ['Registered', 'Picked Up', 'In Transit', 'At Destination Branch', 'Out for Delivery', 'Delivered', 'Returned']
+  return order.indexOf(a.value) - order.indexOf(b.value)
+})
 
 const parcelsColumns = (onView, onEdit, onDelete) => [
   { key: 'guide', label: 'Guia #', sortable: true },

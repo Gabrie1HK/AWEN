@@ -1,5 +1,8 @@
+import { translateStatus } from '../../utils/statusTranslations'
+
 const STATUS_COLORS = {
   Registered: { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' },
+  'Picked Up': { bg: 'rgba(20, 184, 166, 0.15)', color: '#14b8a6' },
   'In Transit': { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' },
   'At Destination Branch': { bg: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' },
   'Out for Delivery': { bg: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9' },
@@ -21,7 +24,7 @@ export default function StatusBadge({ status }) {
       color: colors.color,
       whiteSpace: 'nowrap',
     }}>
-      {status}
+      {translateStatus(status)}
     </span>
   )
 }

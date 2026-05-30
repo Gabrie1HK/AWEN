@@ -5,13 +5,16 @@ import DataTable from '../components/ui/DataTable'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import ErrorBanner from '../components/ui/ErrorBanner'
 import { useApi } from '../hooks/useApi'
+import { PARCEL_STATUS_LABELS, translateStatus } from '../utils/statusTranslations'
 
 const STATUS_COLORS = {
   Registered: '#3b82f6',
+  'Picked Up': '#14b8a6',
   'In Transit': '#f59e0b',
+  'At Destination Branch': '#8b5cf6',
+  'Out for Delivery': '#0ea5e9',
   Delivered: '#10b981',
   Returned: '#ef4444',
-  'At Destination Branch': '#8b5cf6',
 }
 
 const routeColumns = [
@@ -32,10 +35,12 @@ export default function Reports() {
 
   const statusCounts = useMemo(() => ({
     Registered: parcelList.filter(p => p.status === 'Registered').length,
+    'Picked Up': parcelList.filter(p => p.status === 'Picked Up').length,
     'In Transit': parcelList.filter(p => p.status === 'In Transit').length,
+    'At Destination Branch': parcelList.filter(p => p.status === 'At Destination Branch').length,
+    'Out for Delivery': parcelList.filter(p => p.status === 'Out for Delivery').length,
     Delivered: parcelList.filter(p => p.status === 'Delivered').length,
     Returned: parcelList.filter(p => p.status === 'Returned').length,
-    'At Destination Branch': parcelList.filter(p => p.status === 'At Destination Branch').length,
   }), [parcelList])
 
   useEffect(() => {
@@ -149,7 +154,7 @@ export default function Reports() {
               {Object.entries(statusCounts).map(([status, count]) => (
                 <div key={status} className="donut-legend-item">
                   <span className="donut-dot" style={{ backgroundColor: STATUS_COLORS[status] }} />
-                  <span>{status}</span>
+                  <span>{translateStatus(status)}</span>
                   <span style={{ color: 'var(--text-secondary)' }}>{count}</span>
                 </div>
               ))}

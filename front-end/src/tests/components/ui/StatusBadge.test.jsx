@@ -3,24 +3,24 @@ import { render, screen } from '@testing-library/react'
 import StatusBadge from '../../../components/ui/StatusBadge'
 
 describe('StatusBadge', () => {
-  it('renders the status text', () => {
+  it('renders the status text in Spanish', () => {
     render(<StatusBadge status="Delivered" />)
-    expect(screen.getByText('Delivered')).toBeInTheDocument()
+    expect(screen.getByText('Entregado')).toBeInTheDocument()
   })
 
-  it('renders Registered status', () => {
+  it('renders Registered status in Spanish', () => {
     render(<StatusBadge status="Registered" />)
-    expect(screen.getByText('Registered')).toBeInTheDocument()
+    expect(screen.getByText('Registrado')).toBeInTheDocument()
   })
 
-  it('renders In Transit status', () => {
+  it('renders In Transit status in Spanish', () => {
     render(<StatusBadge status="In Transit" />)
-    expect(screen.getByText('In Transit')).toBeInTheDocument()
+    expect(screen.getByText('En Tránsito')).toBeInTheDocument()
   })
 
-  it('renders Returned status', () => {
+  it('renders Returned status in Spanish', () => {
     render(<StatusBadge status="Returned" />)
-    expect(screen.getByText('Returned')).toBeInTheDocument()
+    expect(screen.getByText('Devuelto')).toBeInTheDocument()
   })
 
   it('handles unknown status gracefully', () => {

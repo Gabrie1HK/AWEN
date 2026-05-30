@@ -24,8 +24,10 @@
   
   /* Semantic Colors */
   --status-registered: #3b82f6; /* Blue */
+  --status-picked-up: #14b8a6;  /* Teal */
   --status-transit: #f59e0b;    /* Amber */
   --status-destination: #8b5cf6; /* Violet */
+  --status-out-for-delivery: #0ea5e9; /* Sky */
   --status-delivered: #10b981;  /* Emerald */
   --status-returned: #ef4444;   /* Red */
   
