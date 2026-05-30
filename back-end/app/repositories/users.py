@@ -43,6 +43,7 @@ class InMemoryUserRepository(UserRepository):
                 role=u.role,
                 branch=u.branch,
                 active=u.active,
+                client_number=u.client_number,
             )
             for u in self._users.values()
         ]
@@ -67,6 +68,7 @@ class SqlAlchemyUserRepository(UserRepository):
             address=user.address,
             active=user.active,
             hashed_password=user.hashed_password,
+            client_number=user.client_number,
         )
 
     async def get_by_id(self, user_id: int) -> Optional[UserInDB]:
@@ -83,6 +85,7 @@ class SqlAlchemyUserRepository(UserRepository):
             address=user.address,
             active=user.active,
             hashed_password=user.hashed_password,
+            client_number=user.client_number,
         )
 
     async def list(self) -> List[UserPublic]:
@@ -96,6 +99,7 @@ class SqlAlchemyUserRepository(UserRepository):
                 role=u.role,
                 branch=u.branch,
                 active=u.active,
+                client_number=u.client_number,
             )
             for u in users
         ]

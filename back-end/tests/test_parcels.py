@@ -96,6 +96,26 @@ class TestParcelCRUD:
         )
         assert response.status_code == 404
 
+    def test_delete_parcel(self, client, auth_headers):
+        response = client.delete("/api/v1/parcels/ENV-001", headers=auth_headers)
+        assert response.status_code == 200
+        assert response.json()["status"] == "ok"
+        get_back = client.get("/api/v1/parcels/ENV-001", headers=auth_headers)
+        assert get_back.status_code == 404
+
+    def test_delete_nonexistent_parcel(self, client, auth_headers):
+        response = client.delete("/api/v1/parcels/ENV-999", headers=auth_headers)
+        assert response.status_code == 404
+
+    def test_delete_delivered_parcel(self, client, auth_headers):
+        response = client.delete("/api/v1/parcels/ENV-002", headers=auth_headers)
+        assert response.status_code == 200
+        assert response.json()["status"] == "ok"
+
+    def test_delete_parcel_requires_auth(self, client):
+        response = client.delete("/api/v1/parcels/ENV-001")
+        assert response.status_code == 401
+
     def test_create_parcel_auto_generates_guide(self, client, auth_headers):
         payload = {
             "sender": "Test",

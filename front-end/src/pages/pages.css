@@ -325,6 +325,33 @@
   color: #1e3a8a;
   font-weight: 700;
 }
+.tracking-map-section {
+  margin-top: var(--space-lg);
+}
+.tracking-map-section h4 {
+  font-size: 1rem;
+  margin-bottom: var(--space-md);
+  color: #1e3a8a;
+  font-weight: 700;
+}
+.tracking-map {
+  height: 320px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 4px 20px rgba(30, 58, 138, 0.08);
+}
+.tracking-map-placeholder {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border-medium);
+  border-radius: 14px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
 .tracking-not-found {
   text-align: center;
   padding: var(--space-2xl);
@@ -362,6 +389,46 @@
 .tracking-muted-note {
   color: var(--text-muted);
   font-size: 0.875rem;
+}
+
+.tracking-notes-section {
+  margin-top: var(--space-lg);
+}
+.tracking-notes-section h4 {
+  font-size: 1rem;
+  margin-bottom: var(--space-md);
+  color: #1e3a8a;
+  font-weight: 700;
+}
+.tracking-note-item {
+  display: flex;
+  gap: var(--space-sm);
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.tracking-note-icon {
+  flex-shrink: 0;
+  color: #f97316;
+  margin-top: 2px;
+}
+.tracking-note-body {
+  flex: 1;
+  min-width: 0;
+}
+.tracking-note-text {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin: 0;
+}
+.tracking-note-meta {
+  font-size: 0.688rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  display: block;
 }
 
 /* === Logistics === */

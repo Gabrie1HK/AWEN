@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { parcelsApi, trackingApi, usersApi } from '../services/api'
+import { parcelsApi, trackingApi, usersApi, mapsApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import StepperTimeline from '../components/ui/StepperTimeline'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
@@ -18,13 +18,81 @@ export default function ClientProfile() {
   const [message, setMessage] = useState('')
   const [selectedGuide, setSelectedGuide] = useState(null)
   const [tracking, setTracking] = useState(null)
+  const [clientNotes, setClientNotes] = useState([])
   const [myParcels, setMyParcels] = useState([])
+  const [showCreate, setShowCreate] = useState(false)
+  const [mapComponents, setMapComponents] = useState(null)
+  const [mapStep, setMapStep] = useState('origin')
+  const [originPoint, setOriginPoint] = useState(null)
+  const [destinationPoint, setDestinationPoint] = useState(null)
+  const [routeData, setRouteData] = useState(null)
+  const [loadingRoute, setLoadingRoute] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
+  const [formData, setFormData] = useState({
+    sender: '',
+    senderId: '',
+    senderPhone: '',
+    recipient: '',
+    recipientId: '',
+    recipientPhone: '',
+    recipientAddress: '',
+    weight: '',
+    dimensions: '',
+    declaredValue: '',
+    description: '',
+  })
   const { loading, error, setError, execute } = useApi()
+
+  const defaultCenter = useMemo(() => [10.1620, -68.0077], [])
+
+  useEffect(() => {
+    let active = true
+    import('react-leaflet')
+      .then(mod => {
+        if (!active) return
+        setMapComponents({
+          MapContainer: mod.MapContainer,
+          TileLayer: mod.TileLayer,
+          Marker: mod.Marker,
+          Polyline: mod.Polyline,
+          useMapEvents: mod.useMapEvents,
+        })
+      })
+      .catch(() => {
+        if (!active) return
+        setMapComponents(null)
+      })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     execute(() => parcelsApi.myParcels())
       .then(res => { if (res) setMyParcels(res.data || res) })
   }, [])
+
+  useEffect(() => {
+    if (destinationPoint) {
+      setFormData(prev => ({
+        ...prev,
+        recipientAddress: prev.recipientAddress.trim()
+          ? prev.recipientAddress
+          : `${destinationPoint.lat.toFixed(5)}, ${destinationPoint.lng.toFixed(5)}`,
+      }))
+    }
+  }, [destinationPoint])
+
+  useEffect(() => {
+    if (originPoint && destinationPoint) {
+      setLoadingRoute(true)
+      mapsApi.getRoute(originPoint.lat, originPoint.lng, destinationPoint.lat, destinationPoint.lng)
+        .then(res => setRouteData(res))
+        .catch(() => setRouteData(null))
+        .finally(() => setLoadingRoute(false))
+    } else {
+      setRouteData(null)
+    }
+  }, [originPoint, destinationPoint])
 
   const handleSave = () => {
     usersApi.updateMe(profile)
@@ -34,9 +102,135 @@ export default function ClientProfile() {
 
   const handleTrack = (guide) => {
     setSelectedGuide(guide)
-    trackingApi.publicTrack(guide)
-      .then(res => setTracking(res.tracking || res))
-      .catch(() => setTracking(null))
+    setClientNotes([])
+    parcelsApi.tracking(guide)
+      .then(res => setTracking(res || []))
+      .catch(() => {
+        trackingApi.publicTrack(guide)
+          .then(res => setTracking(res.history || res.tracking || res))
+          .catch(() => setTracking(null))
+      })
+    parcelsApi.getNotes(guide)
+      .then(res => setClientNotes(res || []))
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    if (!selectedGuide) return undefined
+    const refresh = () => {
+      parcelsApi.tracking(selectedGuide)
+        .then(res => setTracking(res || []))
+        .catch(() => {})
+      parcelsApi.getNotes(selectedGuide)
+        .then(res => setClientNotes(res || []))
+        .catch(() => {})
+    }
+    const interval = setInterval(refresh, 10000)
+    return () => clearInterval(interval)
+  }, [selectedGuide])
+
+  const updateField = (field) => (event) => {
+    let value = event.target.value
+    if (field === 'declaredValue') {
+      value = value.replace(/\D/g, '')
+    }
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const resetCreate = () => {
+    setShowCreate(false)
+    setMapStep('origin')
+    setOriginPoint(null)
+    setDestinationPoint(null)
+    setCreateError('')
+    setFormData({
+      sender: profile.name || user?.name || '',
+      senderId: '',
+      senderPhone: profile.phone || user?.phone || '',
+      recipient: '',
+      recipientId: '',
+      recipientPhone: '',
+      recipientAddress: '',
+      weight: '',
+      dimensions: '',
+      declaredValue: '',
+      description: '',
+    })
+  }
+
+  const handleCreate = () => {
+    setCreateError('')
+    if (!originPoint || !destinationPoint) {
+      setCreateError('Selecciona origen y destino en el mapa.')
+      return
+    }
+    const requiredFields = [
+      ['sender', 'Remitente'],
+      ['senderId', 'ID Remitente'],
+      ['senderPhone', 'Teléfono Remitente'],
+      ['recipient', 'Destinatario'],
+      ['recipientId', 'ID Destinatario'],
+      ['recipientPhone', 'Teléfono Destinatario'],
+      ['recipientAddress', 'Dirección Destinatario'],
+    ]
+    const missing = requiredFields
+      .filter(([field]) => !formData[field]?.trim())
+      .map(([, label]) => label)
+    if (missing.length > 0) {
+      setCreateError(`Faltan campos: ${missing.join(', ')}`)
+      return
+    }
+    if (!Number(formData.weight) || Number(formData.weight) <= 0) {
+      setCreateError('El peso debe ser mayor a 0')
+      return
+    }
+    const payload = {
+      sender: formData.sender,
+      senderId: formData.senderId,
+      senderPhone: formData.senderPhone,
+      recipient: formData.recipient,
+      recipientId: formData.recipientId,
+      recipientPhone: formData.recipientPhone,
+      recipientAddress: formData.recipientAddress,
+      originAddress: null,
+      originLat: originPoint.lat,
+      originLng: originPoint.lng,
+      destinationAddress: null,
+      destinationLat: destinationPoint.lat,
+      destinationLng: destinationPoint.lng,
+      originBranch: null,
+      destinationBranch: null,
+      weight: Number(formData.weight || 0),
+      dimensions: formData.dimensions || 'N/A',
+      declaredValue: Number(formData.declaredValue || 0),
+      description: formData.description || 'Sin descripción',
+    }
+
+    setCreating(true)
+    parcelsApi.create(payload)
+      .then((created) => {
+        setMyParcels(prev => [created, ...prev])
+        resetCreate()
+      })
+      .catch((err) => setCreateError(err.message || 'No se pudo crear la encomienda.'))
+      .finally(() => setCreating(false))
+  }
+
+  const MapClickHandler = () => {
+    if (!mapComponents?.useMapEvents) return null
+    const { useMapEvents } = mapComponents
+    useMapEvents({
+      click: (event) => {
+        const coords = { lat: event.latlng.lat, lng: event.latlng.lng }
+        if (mapStep === 'origin') {
+          setOriginPoint(coords)
+          setMapStep('destination')
+        } else {
+          setDestinationPoint(coords)
+        }
+      },
+    })
+    return null
   }
 
   return (
@@ -83,7 +277,19 @@ export default function ClientProfile() {
         </div>
 
         <div className="chart-card">
-          <h3 style={{ marginBottom: 'var(--space-md)' }}>Envio Reciente</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+            <h3>Envio Reciente</h3>
+            <button className="btn btn-primary" onClick={() => {
+              setFormData(prev => ({
+                ...prev,
+                sender: profile.name || user?.name || '',
+                senderPhone: profile.phone || user?.phone || '',
+              }))
+              setShowCreate(true)
+            }}>
+              Nuevo Paquete
+            </button>
+          </div>
           {myParcels.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No tienes envios registrados.</p>
           ) : (
@@ -95,7 +301,7 @@ export default function ClientProfile() {
                     <StatusBadge status={p.status} />
                   </div>
                   <p style={{ fontSize: '0.813rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-                    {p.originBranch} → {p.destinationBranch}
+                    {p.originAddress || p.originBranch} → {p.destinationAddress || p.destinationBranch}
                   </p>
                 </div>
               ))}
@@ -124,8 +330,8 @@ export default function ClientProfile() {
               {myParcels.map(p => (
                 <tr key={p.id} style={{ borderBottom: '1px solid var(--border-medium)', cursor: 'pointer' }} onClick={() => handleTrack(p.guide)}>
                   <td data-label="Guia" style={{ padding: '10px 12px', fontWeight: 600 }}>{p.guide}</td>
-                  <td data-label="Origen" style={{ padding: '10px 12px' }}>{p.originBranch}</td>
-                  <td data-label="Destino" style={{ padding: '10px 12px' }}>{p.destinationBranch}</td>
+                  <td data-label="Origen" style={{ padding: '10px 12px' }}>{p.originAddress || p.originBranch}</td>
+                  <td data-label="Destino" style={{ padding: '10px 12px' }}>{p.destinationAddress || p.destinationBranch}</td>
                   <td data-label="Estado" style={{ padding: '10px 12px' }}><StatusBadge status={p.status} /></td>
                   <td data-label="Fecha" style={{ padding: '10px 12px', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{p.createdAt}</td>
                   <td style={{ padding: '10px 12px' }}>
@@ -154,6 +360,121 @@ export default function ClientProfile() {
             ) : (
               <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Historial no disponible.</p>
             )}
+            {clientNotes.length > 0 && (
+              <div style={{ marginTop: 'var(--space-lg)' }}>
+                <h4 style={{ marginBottom: 8 }}>Notificaciones del Conductor</h4>
+                {clientNotes.map((n, i) => (
+                  <div key={i} style={{ padding: '10px 14px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', marginBottom: 6, fontSize: '0.813rem' }}>
+                    <p>{n.text}</p>
+                    <span style={{ fontSize: '0.688rem', color: 'var(--text-muted)' }}>{n.created_at} - {n.created_by}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {showCreate && (
+        <div className="modal-overlay" onClick={resetCreate}>
+          <div className="modal-content modal-form" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+              <h3>Nueva Encomienda</h3>
+              <button className="btn-action" onClick={resetCreate}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div className="form-grid">
+              <div className="form-field">
+                <label>Remitente</label>
+                <input value={formData.sender} onChange={updateField('sender')} />
+              </div>
+              <div className="form-field">
+                <label>ID Remitente</label>
+                <input value={formData.senderId} onChange={updateField('senderId')} />
+              </div>
+              <div className="form-field">
+                <label>Telefono Remitente</label>
+                <input value={formData.senderPhone} onChange={updateField('senderPhone')} />
+              </div>
+              <div className="form-field">
+                <label>Destinatario *</label>
+                <input value={formData.recipient} onChange={updateField('recipient')} />
+              </div>
+              <div className="form-field">
+                <label>ID Destinatario *</label>
+                <input value={formData.recipientId} onChange={updateField('recipientId')} />
+              </div>
+              <div className="form-field">
+                <label>Telefono Destinatario *</label>
+                <input value={formData.recipientPhone} onChange={updateField('recipientPhone')} />
+              </div>
+              <div className="form-field form-field-full">
+                <label>Direccion Destinatario *</label>
+                <input value={formData.recipientAddress} onChange={updateField('recipientAddress')} />
+              </div>
+              <div className="form-field">
+                <label>Peso (kg) *</label>
+                <input type="number" step="0.1" value={formData.weight} onChange={updateField('weight')} />
+              </div>
+              <div className="form-field">
+                <label>Dimensiones</label>
+                <input value={formData.dimensions} onChange={updateField('dimensions')} />
+              </div>
+              <div className="form-field">
+                <label>Valor Declarado ($)</label>
+                <input type="text" inputMode="numeric" value={formData.declaredValue} onChange={updateField('declaredValue')} />
+              </div>
+              <div className="form-field form-field-full">
+                <label>Descripcion</label>
+                <textarea rows="2" value={formData.description} onChange={updateField('description')} />
+              </div>
+            </div>
+            <div className="tracking-map-section" style={{ marginTop: 'var(--space-lg)' }}>
+              <h4>Selecciona Origen y Destino</h4>
+              <p className="tracking-muted-note">Paso actual: {mapStep === 'origin' ? 'Origen' : 'Destino'}</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                <button className="btn btn-outline" type="button" onClick={() => setMapStep('origin')}>Marcar Origen</button>
+                <button className="btn btn-outline" type="button" onClick={() => setMapStep('destination')}>Marcar Destino</button>
+                <button className="btn btn-outline" type="button" onClick={() => { setOriginPoint(null); setDestinationPoint(null); setMapStep('origin') }}>Limpiar</button>
+              </div>
+              <div className="tracking-map">
+                {mapComponents?.MapContainer ? (
+                  <mapComponents.MapContainer center={defaultCenter} zoom={11} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+                    <mapComponents.TileLayer
+                      attribution='&copy; OpenStreetMap contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <MapClickHandler />
+                    {originPoint && (
+                      <mapComponents.Marker position={[originPoint.lat, originPoint.lng]} />
+                    )}
+                    {destinationPoint && (
+                      <mapComponents.Marker position={[destinationPoint.lat, destinationPoint.lng]} />
+                    )}
+                    {routeData?.route?.length ? (
+                      <mapComponents.Polyline positions={routeData.route.map(p => [p.lat, p.lng])} />
+                    ) : originPoint && destinationPoint && (
+                      <mapComponents.Polyline positions={[[originPoint.lat, originPoint.lng], [destinationPoint.lat, destinationPoint.lng]]} />
+                    )}
+                  </mapComponents.MapContainer>
+                ) : (
+                  <div className="tracking-map-placeholder">Mapa no disponible</div>
+                )}
+              </div>
+              {loadingRoute && <p style={{ fontSize: '0.813rem', color: 'var(--text-muted)', marginTop: 4 }}>Calculando ruta...</p>}
+              {routeData?.distance_km > 0 && (
+                <p style={{ fontSize: '0.875rem', fontWeight: 600, marginTop: 4 }}>
+                  Distancia: {routeData.distance_km} km
+                </p>
+              )}
+            </div>
+            {createError && <p style={{ color: 'var(--status-returned)', fontSize: '0.875rem', marginTop: 'var(--space-sm)' }}>{createError}</p>}
+            <div className="modal-actions" style={{ marginTop: 'var(--space-lg)' }}>
+              <button className="btn btn-outline" onClick={resetCreate}>Cancelar</button>
+              <button className="btn btn-primary" onClick={handleCreate} disabled={creating}>
+                {creating ? 'Guardando...' : 'Crear Encomienda'}
+              </button>
+            </div>
           </div>
         </div>
       )}

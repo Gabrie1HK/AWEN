@@ -40,5 +40,8 @@ class UserUpdate(AppBaseModel):
     active: Optional[bool] = None
     last_login: Optional[str] = Field(default=None, alias="lastLogin")
 
+class UserPasswordReset(AppBaseModel):
+    new_password: str = Field(..., min_length=6, max_length=120)
+
 class UserPublic(UserBase):
     id: int

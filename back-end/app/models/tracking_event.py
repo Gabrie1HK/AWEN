@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Boolean, Integer, String
+from sqlalchemy import Boolean, Float, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.database import Base
@@ -15,5 +15,7 @@ class TrackingEvent(Base):
     date: Mapped[str | None] = mapped_column(String(20))
     time: Mapped[str | None] = mapped_column(String(10))
     location: Mapped[str | None] = mapped_column(String(200))
+    lat: Mapped[float | None] = mapped_column(Float)
+    lng: Mapped[float | None] = mapped_column(Float)
     operator: Mapped[str | None] = mapped_column(String(120))
     completed: Mapped[bool] = mapped_column(Boolean, default=False)

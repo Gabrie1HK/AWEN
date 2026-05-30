@@ -12,6 +12,7 @@ class UserPublic(AppBaseModel):
     phone: Optional[str] = None
     address: Optional[str] = None
     active: bool = True
+    client_number: Optional[int] = None
 
 
 class UserInDB(UserPublic):

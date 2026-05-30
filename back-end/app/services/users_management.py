@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from app.core.errors import NotFoundError
 from app.core.pagination import paginate_with_meta
+from app.core.security import get_password_hash
 from app.repositories.user_management import UserManagementRepository
 from app.schemas.user_management import UserCreate, UserPublic, UserRole, UserUpdate
 
@@ -49,6 +50,15 @@ class UserManagementService:
     async def delete(self, user_id: int) -> None:
         deleted = await self._repo.delete(user_id)
         if not deleted:
+            raise NotFoundError("Usuario no encontrado")
+
+    async def reset_password(self, user_id: int, new_password: str) -> None:
+        user = await self._repo.get(user_id)
+        if not user:
+            raise NotFoundError("Usuario no encontrado")
+        hashed = get_password_hash(new_password)
+        updated = await self._repo.update_password(user_id, hashed)
+        if not updated:
             raise NotFoundError("Usuario no encontrado")
 
     async def _next_user_id(self) -> int:

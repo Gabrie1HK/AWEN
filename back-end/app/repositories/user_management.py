@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.user import User
 from app.models.user_management import UserManagement
 from app.schemas.user_management import UserPublic, UserUpdate
 
@@ -25,10 +26,14 @@ class UserManagementRepository:
     async def delete(self, user_id: int) -> bool:
         raise NotImplementedError
 
+    async def update_password(self, user_id: int, hashed_password: str) -> bool:
+        raise NotImplementedError
+
 
 class InMemoryUserManagementRepository(UserManagementRepository):
     def __init__(self, users: List[UserPublic]) -> None:
         self._users: Dict[int, UserPublic] = {u.id: u for u in users}
+        self._passwords: Dict[int, str] = {}
 
     async def list(self) -> List[UserPublic]:
         return list(self._users.values())
@@ -59,6 +64,12 @@ class InMemoryUserManagementRepository(UserManagementRepository):
         data["active"] = False
         updated = UserPublic(**data)
         self._users[user_id] = updated
+        return True
+
+    async def update_password(self, user_id: int, hashed_password: str) -> bool:
+        if user_id not in self._users:
+            return False
+        self._passwords[user_id] = hashed_password
         return True
 
 
@@ -113,6 +124,24 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
             last_login=user.last_login,
         )
         self._session.add(record)
+        
+        from sqlalchemy import select, func
+        from app.core.security import get_password_hash
+        max_client_number = (await self._session.execute(select(func.max(User.client_number)))).scalar() or 0
+        auth_user = User(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            role=user.role,
+            branch=user.branch,
+            phone=user.phone,
+            address=user.address,
+            active=user.active,
+            hashed_password=get_password_hash("awen123"),
+            client_number=max_client_number + 1,
+        )
+        self._session.add(auth_user)
+        
         await self._session.commit()
         return user
 
@@ -125,6 +154,13 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
             user.last_login = data.pop("lastLogin")
         for key, value in data.items():
             setattr(user, key, value)
+            
+        auth_user = await self._session.get(User, user_id)
+        if auth_user:
+            for key, value in data.items():
+                if hasattr(auth_user, key):
+                    setattr(auth_user, key, value)
+                    
         await self._session.commit()
         return UserPublic(
             id=user.id,
@@ -143,5 +179,19 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
         if not user:
             return False
         user.active = False
+        auth_user = await self._session.get(User, user_id)
+        if auth_user:
+            auth_user.active = False
+        await self._session.commit()
+        return True
+
+    async def update_password(self, user_id: int, hashed_password: str) -> bool:
+        mgmt = await self._session.get(UserManagement, user_id)
+        if not mgmt:
+            return False
+        mgmt.hashed_password = hashed_password
+        auth_user = await self._session.get(User, user_id)
+        if auth_user:
+            auth_user.hashed_password = hashed_password
         await self._session.commit()
         return True

@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user, get_parcel_service
+from app.database.database import get_db
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.parcel import ParcelCreate, ParcelPublic, ParcelStatus, ParcelStatusUpdate, ParcelUpdate
+from app.schemas.parcel_note import ParcelNoteCreate, ParcelNotePublic
 from app.schemas.tracking import TrackingEvent
 from app.services.parcels import ParcelService
 
@@ -77,6 +80,16 @@ async def update_status(
     return await service.update_status(parcel_id, payload)
 
 
+@router.delete("/{parcel_id}", summary="Eliminar encomienda (admin)")
+async def delete_parcel(
+    parcel_id: str,
+    service: ParcelService = Depends(get_parcel_service),
+    _user=Depends(get_current_user),
+) -> dict:
+    await service.delete_parcel(parcel_id)
+    return {"status": "ok"}
+
+
 @router.post("/{parcel_id}/cancel", response_model=ParcelPublic)
 async def cancel_parcel(
     parcel_id: str,
@@ -86,13 +99,34 @@ async def cancel_parcel(
     return await service.cancel(parcel_id)
 
 
+@router.post("/{guide}/notes", response_model=ParcelNotePublic, status_code=201)
+async def add_parcel_note(
+    guide: str,
+    payload: ParcelNoteCreate,
+    service: ParcelService = Depends(get_parcel_service),
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+) -> ParcelNotePublic:
+    return await service.add_note(guide, payload.text, user.name, payload.is_public, db)
+
+
+@router.get("/{guide}/notes", response_model=list[ParcelNotePublic])
+async def get_parcel_notes(
+    guide: str,
+    service: ParcelService = Depends(get_parcel_service),
+    db: AsyncSession = Depends(get_db),
+    _user=Depends(get_current_user),
+) -> list[ParcelNotePublic]:
+    return await service.get_notes(guide, db)
+
+
 @router.get("/{guide}/tracking", response_model=list[TrackingEvent])
 async def parcel_tracking(
     guide: str,
     service: ParcelService = Depends(get_parcel_service),
     _user=Depends(get_current_user),
 ) -> list[TrackingEvent]:
-    events = await service.tracking(guide)
+    events, _route = await service.tracking(guide)
     if not events:
         from app.core.errors import NotFoundError
         raise NotFoundError("Encomienda no encontrada")

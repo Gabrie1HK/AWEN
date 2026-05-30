@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.dependencies import get_current_user, get_user_management_service
 from app.schemas.pagination import PaginatedResponse
-from app.schemas.user_management import UserCreate, UserPublic, UserRole, UserUpdate
+from app.schemas.user_management import UserCreate, UserPasswordReset, UserPublic, UserRole, UserUpdate
 from app.services.users_management import UserManagementService
 
 
@@ -73,4 +73,15 @@ async def delete_user(
     _user=Depends(get_current_user),
 ) -> dict:
     await service.delete(user_id)
+    return {"status": "ok"}
+
+
+@router.patch("/{user_id}/password", summary="Cambiar clave de usuario (admin)")
+async def reset_user_password(
+    user_id: int,
+    payload: UserPasswordReset,
+    service: UserManagementService = Depends(get_user_management_service),
+    _user=Depends(get_current_user),
+) -> dict:
+    await service.reset_password(user_id, payload.new_password)
     return {"status": "ok"}

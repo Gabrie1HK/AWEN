@@ -5,6 +5,7 @@ from app.api.routes.branches import router as branches_router
 from app.api.routes.dashboard import router as dashboard_router
 from app.api.routes.deliveries import router as deliveries_router
 from app.api.routes.logistics import router as logistics_router
+from app.api.routes.maps import router as maps_router
 from app.api.routes.notifications import router as notifications_router
 from app.api.routes.notifications_stream import router as notifications_stream_router
 from app.api.routes.parcels import router as parcels_router
@@ -24,6 +25,7 @@ router.include_router(auth_router)
 router.include_router(parcels_router)
 router.include_router(tracking_router)
 router.include_router(logistics_router)
+router.include_router(maps_router)
 router.include_router(reports_router)
 router.include_router(dashboard_router)
 router.include_router(users_router)

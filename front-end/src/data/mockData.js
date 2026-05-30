@@ -29,20 +29,20 @@ export const parcels = [
 
 export const trackingHistory = {
   'AWEN-2026-0001': [
-    { step: 'Registered', date: '2026-05-10', time: '14:30', location: 'Sucursal Central', operator: 'Operador Carlos', completed: true },
-    { step: 'Picked Up', date: '2026-05-10', time: '16:00', location: 'Sucursal Central', operator: 'Conductor Pedro', completed: true },
-    { step: 'In Transit', date: '2026-05-11', time: '08:00', location: 'Autopista Regional del Centro', operator: 'Conductor Pedro', completed: true },
-    { step: 'At Destination Branch', date: '2026-05-12', time: '10:15', location: 'Sucursal Norte', operator: 'Operador Maria', completed: true },
-    { step: 'Out for Delivery', date: '2026-05-13', time: '09:00', location: 'Sucursal Norte', operator: 'Conductor Pedro', completed: false },
+    { step: 'Registered', date: '2026-05-10', time: '14:30', location: 'Sucursal Central', lat: 10.4959, lng: -66.8534, operator: 'Operador Carlos', completed: true },
+    { step: 'Picked Up', date: '2026-05-10', time: '16:00', location: 'Sucursal Central', lat: 10.4959, lng: -66.8534, operator: 'Conductor Pedro', completed: true },
+    { step: 'In Transit', date: '2026-05-11', time: '08:00', location: 'Autopista Regional del Centro', lat: 10.2343, lng: -67.5104, operator: 'Conductor Pedro', completed: true },
+    { step: 'At Destination Branch', date: '2026-05-12', time: '10:15', location: 'Sucursal Norte', lat: 10.6545, lng: -71.6506, operator: 'Operador Maria', completed: true },
+    { step: 'Out for Delivery', date: '2026-05-13', time: '09:00', location: 'Sucursal Norte', lat: 10.6545, lng: -71.6506, operator: 'Conductor Pedro', completed: false },
     { step: 'Delivered', date: null, time: null, location: null, operator: null, completed: false },
   ],
   'AWEN-2026-0002': [
-    { step: 'Registered', date: '2026-05-08', time: '10:00', location: 'Sucursal Central', operator: 'Operador Carlos', completed: true },
-    { step: 'Picked Up', date: '2026-05-08', time: '11:30', location: 'Sucursal Central', operator: 'Conductor Pedro', completed: true },
-    { step: 'In Transit', date: '2026-05-09', time: '07:00', location: 'Autopista Barcelona-Ciudad Guayana', operator: 'Conductor Pedro', completed: true },
-    { step: 'At Destination Branch', date: '2026-05-10', time: '14:00', location: 'Sucursal Sur', operator: 'Operador Maria', completed: true },
-    { step: 'Out for Delivery', date: '2026-05-11', time: '09:30', location: 'Sucursal Sur', operator: 'Conductor Ana', completed: true },
-    { step: 'Delivered', date: '2026-05-12', time: '11:00', location: 'Av. Las Americas 456, Ciudad Guayana', operator: 'Conductor Ana', completed: true },
+    { step: 'Registered', date: '2026-05-08', time: '10:00', location: 'Sucursal Central', lat: 10.4959, lng: -66.8534, operator: 'Operador Carlos', completed: true },
+    { step: 'Picked Up', date: '2026-05-08', time: '11:30', location: 'Sucursal Central', lat: 10.4959, lng: -66.8534, operator: 'Conductor Pedro', completed: true },
+    { step: 'In Transit', date: '2026-05-09', time: '07:00', location: 'Autopista Barcelona-Ciudad Guayana', lat: 10.1308, lng: -64.6862, operator: 'Conductor Pedro', completed: true },
+    { step: 'At Destination Branch', date: '2026-05-10', time: '14:00', location: 'Sucursal Sur', lat: 8.3512, lng: -62.6413, operator: 'Operador Maria', completed: true },
+    { step: 'Out for Delivery', date: '2026-05-11', time: '09:30', location: 'Sucursal Sur', lat: 8.3512, lng: -62.6413, operator: 'Conductor Ana', completed: true },
+    { step: 'Delivered', date: '2026-05-12', time: '11:00', location: 'Av. Las Americas 456, Ciudad Guayana', lat: 8.3519, lng: -62.6414, operator: 'Conductor Ana', completed: true },
   ],
 }
 

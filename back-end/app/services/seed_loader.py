@@ -10,6 +10,7 @@ from app.models.delivery import Delivery
 from app.models.notification import Notification
 from app.models.parcel import Parcel
 from app.models.tracking_event import TrackingEvent
+from app.core.security import get_password_hash
 from app.models.user import User
 from app.models.user_management import UserManagement
 from app.models.vehicle import Vehicle
@@ -70,6 +71,7 @@ async def _seed_users_management(session: AsyncSession) -> None:
                 address=item.address,
                 active=item.active,
                 last_login=item.last_login,
+                hashed_password=get_password_hash("123456"),
             )
         )
 
@@ -108,6 +110,12 @@ async def _seed_parcels(session: AsyncSession) -> None:
                 recipient_id=item.recipient_id,
                 recipient_phone=item.recipient_phone,
                 recipient_address=item.recipient_address,
+                origin_address=item.origin_address,
+                origin_lat=item.origin_lat,
+                origin_lng=item.origin_lng,
+                destination_address=item.destination_address,
+                destination_lat=item.destination_lat,
+                destination_lng=item.destination_lng,
                 origin_branch=item.origin_branch,
                 destination_branch=item.destination_branch,
                 weight=item.weight,
@@ -137,6 +145,8 @@ async def _seed_tracking(session: AsyncSession) -> None:
                     date=item.date,
                     time=item.time,
                     location=item.location,
+                    lat=item.lat,
+                    lng=item.lng,
                     operator=item.operator,
                     completed=item.completed,
                 )

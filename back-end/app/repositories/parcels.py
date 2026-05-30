@@ -137,6 +137,12 @@ class SqlAlchemyParcelRepository(ParcelRepository):
             recipient_id=parcel.recipient_id,
             recipient_phone=parcel.recipient_phone,
             recipient_address=parcel.recipient_address,
+            origin_address=parcel.origin_address,
+            origin_lat=parcel.origin_lat,
+            origin_lng=parcel.origin_lng,
+            destination_address=parcel.destination_address,
+            destination_lat=parcel.destination_lat,
+            destination_lng=parcel.destination_lng,
             origin_branch=parcel.origin_branch,
             destination_branch=parcel.destination_branch,
             weight=parcel.weight,
@@ -168,6 +174,18 @@ class SqlAlchemyParcelRepository(ParcelRepository):
             data["recipient_phone"] = data.pop("recipientPhone")
         if "recipientAddress" in data:
             data["recipient_address"] = data.pop("recipientAddress")
+        if "originAddress" in data:
+            data["origin_address"] = data.pop("originAddress")
+        if "originLat" in data:
+            data["origin_lat"] = data.pop("originLat")
+        if "originLng" in data:
+            data["origin_lng"] = data.pop("originLng")
+        if "destinationAddress" in data:
+            data["destination_address"] = data.pop("destinationAddress")
+        if "destinationLat" in data:
+            data["destination_lat"] = data.pop("destinationLat")
+        if "destinationLng" in data:
+            data["destination_lng"] = data.pop("destinationLng")
         if "originBranch" in data:
             data["origin_branch"] = data.pop("originBranch")
         if "destinationBranch" in data:
@@ -200,6 +218,17 @@ class SqlAlchemyParcelRepository(ParcelRepository):
         parcel = await self._session.get(Parcel, parcel_id)
         if not parcel:
             return False
+
+        from app.models.batch_parcel import BatchParcel
+        from app.models.delivery import Delivery
+        from app.models.parcel_note import ParcelNote
+        from app.models.tracking_event import TrackingEvent as TrackingEventModel
+
+        await self._session.execute(delete(BatchParcel).where(BatchParcel.parcel_id == parcel_id))
+        await self._session.execute(delete(Delivery).where(Delivery.guide == parcel.guide))
+        await self._session.execute(delete(ParcelNote).where(ParcelNote.guide == parcel.guide))
+        await self._session.execute(delete(TrackingEventModel).where(TrackingEventModel.guide == parcel.guide))
+
         await self._session.delete(parcel)
         await self._session.commit()
         return True
@@ -216,6 +245,12 @@ class SqlAlchemyParcelRepository(ParcelRepository):
             recipientId=parcel.recipient_id,
             recipientPhone=parcel.recipient_phone,
             recipientAddress=parcel.recipient_address,
+            originAddress=parcel.origin_address,
+            originLat=parcel.origin_lat,
+            originLng=parcel.origin_lng,
+            destinationAddress=parcel.destination_address,
+            destinationLat=parcel.destination_lat,
+            destinationLng=parcel.destination_lng,
             originBranch=parcel.origin_branch,
             destinationBranch=parcel.destination_branch,
             weight=parcel.weight,
@@ -243,6 +278,8 @@ class SqlAlchemyTrackingRepository(TrackingRepository):
                 date=item.date,
                 time=item.time,
                 location=item.location,
+                lat=item.lat,
+                lng=item.lng,
                 operator=item.operator,
                 completed=item.completed,
             )
@@ -258,6 +295,8 @@ class SqlAlchemyTrackingRepository(TrackingRepository):
                 date=item.date,
                 time=item.time,
                 location=item.location,
+                lat=item.lat,
+                lng=item.lng,
                 operator=item.operator,
                 completed=item.completed,
             )

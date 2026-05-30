@@ -15,7 +15,7 @@ const roleOptions = [
   { value: 'Client', label: 'Cliente' },
 ]
 
-const columns = (onEdit, onDelete) => [
+const columns = (onEdit, onDelete, onResetPassword) => [
   { key: 'name', label: 'Nombre', sortable: true },
   { key: 'email', label: 'Email', sortable: true },
   { key: 'role', label: 'Rol', render: (r) => <RoleBadge role={r.role} /> },
@@ -33,6 +33,9 @@ const columns = (onEdit, onDelete) => [
         <button className="btn-action" title="Editar" onClick={() => onEdit(r)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
         </button>
+        <button className="btn-action" title="Cambiar clave" onClick={() => onResetPassword(r)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </button>
         <button className="btn-action btn-action-danger" title="Eliminar" onClick={() => onDelete(r)}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
         </button>
@@ -47,6 +50,7 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState('')
   const [editUser, setEditUser] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [passwordTarget, setPasswordTarget] = useState(null)
 
   const [userList, setUserList] = useState([])
   const [branchList, setBranchList] = useState([])
@@ -95,7 +99,7 @@ export default function UserManagement() {
       <ErrorBanner message={error} onDismiss={() => setError(null)} />
       {loading ? <LoadingSpinner /> : (
       <DataTable
-        columns={columns(u => setEditUser(u), u => setDeleteTarget(u))}
+        columns={columns(u => setEditUser(u), u => setDeleteTarget(u), u => setPasswordTarget(u))}
         data={userList}
         pageSize={PAGE_SIZE}
         totalItems={totalUsers}
@@ -164,6 +168,46 @@ export default function UserManagement() {
                 setEditUser(null)
               }}>
                 {editUser.id ? 'Guardar Cambios' : 'Crear Usuario'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {passwordTarget && (
+        <div className="modal-overlay" onClick={() => setPasswordTarget(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' }}>
+              <h3>Cambiar Clave</h3>
+              <button className="btn-action" onClick={() => setPasswordTarget(null)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <p style={{ marginBottom: 'var(--space-md)', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+              Nueva clave para <strong>{passwordTarget.name}</strong>
+            </p>
+            <div className="form-grid">
+              <div className="form-field form-field-full">
+                <label>Nueva clave</label>
+                <input id="pw-new" type="password" placeholder="Min. 6 caracteres" />
+              </div>
+              <div className="form-field form-field-full">
+                <label>Confirmar clave</label>
+                <input id="pw-confirm" type="password" placeholder="Repite la clave" />
+              </div>
+            </div>
+            <div className="modal-actions" style={{ marginTop: 'var(--space-lg)' }}>
+              <button className="btn btn-outline" onClick={() => setPasswordTarget(null)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={() => {
+                const pw = document.getElementById('pw-new')?.value
+                const confirm = document.getElementById('pw-confirm')?.value
+                if (!pw || pw.length < 6) { setError('La clave debe tener al menos 6 caracteres'); return }
+                if (pw !== confirm) { setError('Las claves no coinciden'); return }
+                usersApi.resetPassword(passwordTarget.id, pw)
+                  .then(() => setPasswordTarget(null))
+                  .catch(() => setError('No se pudo cambiar la clave'))
+              }}>
+                Guardar Clave
               </button>
             </div>
           </div>

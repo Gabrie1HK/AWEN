@@ -5,8 +5,13 @@ from typing import List, Optional
 
 from typing import Any, Dict
 
+import httpx
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.errors import NotFoundError, ValidationError
 from app.core.pagination import paginate_with_meta
+from app.models.parcel_note import ParcelNote
 from app.repositories.parcels import ParcelRepository, TrackingRepository
 from app.schemas.parcel import (
     ParcelCreate,
@@ -15,7 +20,9 @@ from app.schemas.parcel import (
     ParcelStatusUpdate,
     ParcelUpdate,
 )
+from app.schemas.parcel_note import ParcelNoteCreate, ParcelNotePublic
 from app.schemas.tracking import TrackingEvent
+from app.core.config import get_settings
 from app.services.notifications import NotificationService
 
 
@@ -24,6 +31,7 @@ class ParcelService:
         self._parcels = parcel_repo
         self._tracking = tracking_repo
         self._notifications = notifications
+        self._settings = get_settings()
 
     async def list(
         self,
@@ -56,7 +64,12 @@ class ParcelService:
         items = await self._parcels.list()
         return [
             p for p in items
-            if lowered in p.sender.lower() or lowered in p.recipient.lower()
+            if (
+                p.sender.lower() in lowered
+                or lowered in p.sender.lower()
+                or p.recipient.lower() in lowered
+                or lowered in p.recipient.lower()
+            )
         ]
 
     async def get(self, parcel_id: str) -> ParcelPublic:
@@ -72,6 +85,13 @@ class ParcelService:
         return parcel
 
     async def create(self, payload: ParcelCreate) -> ParcelPublic:
+        payload = await self._apply_location_defaults(payload)
+        if not payload.origin_branch:
+            fallback = (payload.origin_address or "Sucursal")[:120]
+            payload = ParcelCreate(**{**payload.model_dump(by_alias=True), "originBranch": fallback})
+        if not payload.destination_branch:
+            fallback = (payload.destination_address or "Sucursal")[:120]
+            payload = ParcelCreate(**{**payload.model_dump(by_alias=True), "destinationBranch": fallback})
         now = datetime.now(timezone.utc).date().isoformat()
         next_id = await self._next_parcel_id()
         guide = await self._next_guide_number()
@@ -86,7 +106,15 @@ class ParcelService:
             **payload.model_dump(by_alias=True),
         )
         await self._parcels.create(parcel)
-        await self._tracking.set_history(guide, self._default_tracking(guide))
+        await self._tracking.set_history(
+            guide,
+            self._default_tracking(
+                guide,
+                origin_address=parcel.origin_address,
+                origin_lat=parcel.origin_lat,
+                origin_lng=parcel.origin_lng,
+            ),
+        )
         if self._notifications:
             await self._notifications.create(
                 text=f"Nueva encomienda {guide} registrada - {payload.sender} a {payload.recipient}",
@@ -99,6 +127,7 @@ class ParcelService:
         existing = await self._parcels.get(parcel_id)
         if not existing:
             raise NotFoundError("Encomienda no encontrada")
+        update = await self._apply_location_defaults(update)
         updated = await self._parcels.update(parcel_id, update)
         if not updated:
             raise NotFoundError("Encomienda no encontrada")
@@ -135,6 +164,15 @@ class ParcelService:
             )
         return refreshed
 
+    async def delete_parcel(self, parcel_id: str) -> None:
+        existing = await self._parcels.get(parcel_id)
+        if not existing:
+            raise NotFoundError("Encomienda no encontrada")
+        await self._tracking.set_history(existing.guide, [])
+        deleted = await self._parcels.delete(parcel_id)
+        if not deleted:
+            raise NotFoundError("Encomienda no encontrada")
+
     async def cancel(self, parcel_id: str) -> ParcelPublic:
         update = ParcelUpdate(status=ParcelStatus.RETURNED)
         updated = await self.update(parcel_id, update)
@@ -149,8 +187,189 @@ class ParcelService:
             )
         return updated
 
-    async def tracking(self, guide: str) -> List[TrackingEvent]:
-        return await self._tracking.list_by_guide(guide)
+    async def tracking(
+        self,
+        guide: str,
+        origin: Optional[tuple[float, float]] = None,
+        destination: Optional[tuple[float, float]] = None,
+    ) -> tuple[List[TrackingEvent], Optional[List[dict]]]:
+        history = await self._tracking.list_by_guide(guide)
+        enriched = await self._enrich_tracking_coords(history)
+        route = await self._build_route(enriched)
+        if not route and origin and destination:
+            result = await self._build_route_from_points(origin, destination)
+            route = result["route"] if result else None
+        return enriched, route
+
+    async def add_note(self, guide: str, text: str, created_by: str, is_public: bool, db: AsyncSession) -> ParcelNotePublic:
+        parcel = await self._parcels.get_by_guide(guide)
+        if not parcel:
+            raise NotFoundError("Encomienda no encontrada")
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+        record = ParcelNote(guide=guide, text=text, created_by=created_by, created_at=now, is_public=is_public)
+        db.add(record)
+        await db.commit()
+        await db.refresh(record)
+        return ParcelNotePublic(id=record.id, guide=record.guide, text=record.text, created_by=record.created_by, created_at=record.created_at, is_public=record.is_public)
+
+    async def get_notes(self, guide: str, db: AsyncSession, is_public_only: bool = False) -> list[ParcelNotePublic]:
+        stmt = select(ParcelNote).where(ParcelNote.guide == guide)
+        if is_public_only:
+            stmt = stmt.where(ParcelNote.is_public == True)
+        stmt = stmt.order_by(ParcelNote.id)
+        result = await db.execute(stmt)
+        records = result.scalars().all()
+        return [
+            ParcelNotePublic(id=r.id, guide=r.guide, text=r.text, created_by=r.created_by, created_at=r.created_at, is_public=r.is_public)
+            for r in records
+        ]
+
+    async def _enrich_tracking_coords(self, history: List[TrackingEvent]) -> List[TrackingEvent]:
+        if not history:
+            return history
+
+        missing = [event for event in history if event.completed and event.location and not (event.lat and event.lng)]
+        if not missing:
+            return history
+
+        results: Dict[str, Dict[str, float]] = {}
+        for event in missing:
+            if event.location in results:
+                continue
+            coords = await self._geocode_location(event.location)
+            if coords:
+                results[event.location] = coords
+
+        if not results:
+            return history
+
+        updated: List[TrackingEvent] = []
+        for event in history:
+            coords = results.get(event.location) if event.location else None
+            if coords and not (event.lat and event.lng):
+                data = event.model_dump()
+                data.update(lat=coords["lat"], lng=coords["lng"])
+                updated.append(TrackingEvent(**data))
+            else:
+                updated.append(event)
+        return updated
+
+    async def _geocode_location(self, location: str) -> Optional[Dict[str, float]]:
+        params = {
+            "format": "json",
+            "limit": 1,
+            "q": location,
+        }
+        headers = {
+            "User-Agent": self._settings.nominatim_user_agent,
+        }
+        try:
+            async with httpx.AsyncClient(timeout=self._settings.nominatim_timeout_seconds) as client:
+                response = await client.get(self._settings.nominatim_url, params=params, headers=headers)
+                if response.status_code != 200:
+                    return None
+                payload = response.json()
+        except httpx.RequestError:
+            return None
+
+        if not payload:
+            return None
+        try:
+            return {"lat": float(payload[0]["lat"]), "lng": float(payload[0]["lon"])}
+        except (KeyError, ValueError, TypeError, IndexError):
+            return None
+
+    async def _reverse_geocode(self, lat: float, lng: float) -> Optional[str]:
+        params = {
+            "format": "json",
+            "lat": lat,
+            "lon": lng,
+        }
+        headers = {
+            "User-Agent": self._settings.nominatim_user_agent,
+        }
+        try:
+            async with httpx.AsyncClient(timeout=self._settings.nominatim_timeout_seconds) as client:
+                response = await client.get(self._settings.nominatim_reverse_url, params=params, headers=headers)
+                if response.status_code != 200:
+                    return None
+                payload = response.json()
+        except httpx.RequestError:
+            return None
+        address = payload.get("display_name")
+        return address if isinstance(address, str) else None
+
+    async def _apply_location_defaults(self, payload: ParcelCreate | ParcelUpdate) -> ParcelCreate | ParcelUpdate:
+        data = payload.model_dump(by_alias=True, exclude_unset=True)
+        origin_lat = data.get("originLat")
+        origin_lng = data.get("originLng")
+        destination_lat = data.get("destinationLat")
+        destination_lng = data.get("destinationLng")
+        origin_address = data.get("originAddress")
+        destination_address = data.get("destinationAddress")
+
+        if origin_lat is not None and origin_lng is not None and not origin_address:
+            origin_address = await self._reverse_geocode(float(origin_lat), float(origin_lng))
+        if destination_lat is not None and destination_lng is not None and not destination_address:
+            destination_address = await self._reverse_geocode(float(destination_lat), float(destination_lng))
+
+        if origin_address is not None:
+            data["originAddress"] = origin_address
+        if destination_address is not None:
+            data["destinationAddress"] = destination_address
+
+        if isinstance(payload, ParcelCreate):
+            return ParcelCreate(**data)
+        return ParcelUpdate(**data)
+
+    async def _build_route(self, history: List[TrackingEvent]) -> Optional[List[dict]]:
+        steps = [event for event in history if event.completed and event.lat and event.lng]
+        if len(steps) < 2:
+            return None
+        origin = steps[0]
+        destination = steps[-1]
+        url = f"{self._settings.osrm_url}/{origin.lng},{origin.lat};{destination.lng},{destination.lat}"
+        params = {"overview": "full", "geometries": "geojson"}
+        try:
+            async with httpx.AsyncClient(timeout=self._settings.osrm_timeout_seconds) as client:
+                response = await client.get(url, params=params)
+                if response.status_code != 200:
+                    return None
+                payload = response.json()
+        except httpx.RequestError:
+            return None
+        coords = payload.get("routes", [{}])[0].get("geometry", {}).get("coordinates")
+        if not coords:
+            return None
+        return [{"lat": float(lat), "lng": float(lng)} for lng, lat in coords]
+
+    async def _build_route_from_points(
+        self,
+        origin: tuple[float, float],
+        destination: tuple[float, float],
+    ) -> Optional[dict]:
+        origin_lat, origin_lng = origin
+        destination_lat, destination_lng = destination
+        url = f"{self._settings.osrm_url}/{origin_lng},{origin_lat};{destination_lng},{destination_lat}"
+        params = {"overview": "full", "geometries": "geojson"}
+        try:
+            async with httpx.AsyncClient(timeout=self._settings.osrm_timeout_seconds) as client:
+                response = await client.get(url, params=params)
+                if response.status_code != 200:
+                    return None
+                payload = response.json()
+        except httpx.RequestError:
+            return None
+        routes = payload.get("routes")
+        if not routes:
+            return None
+        coords = routes[0].get("geometry", {}).get("coordinates")
+        if not coords:
+            return None
+        route = [{"lat": float(lat), "lng": float(lng)} for lng, lat in coords]
+        distance_m = routes[0].get("distance", 0)
+        distance_km = round(distance_m / 1000, 2)
+        return {"route": route, "distance_km": distance_km}
 
     async def _next_parcel_id(self) -> str:
         existing = await self._parcels.list()
@@ -166,9 +385,22 @@ class ParcelService:
         last = max(int(p.guide.split("-")[-1]) for p in existing)
         return f"AWEN-2026-{last + 1:04d}"
 
-    def _default_tracking(self, guide: str) -> List[TrackingEvent]:
+    def _default_tracking(
+        self,
+        guide: str,
+        origin_address: Optional[str] = None,
+        origin_lat: Optional[float] = None,
+        origin_lng: Optional[float] = None,
+    ) -> List[TrackingEvent]:
         return [
-            TrackingEvent(step=ParcelStatus.REGISTERED, date=datetime.now(timezone.utc).date().isoformat(), completed=True),
+            TrackingEvent(
+                step=ParcelStatus.REGISTERED,
+                date=datetime.now(timezone.utc).date().isoformat(),
+                location=origin_address,
+                lat=origin_lat,
+                lng=origin_lng,
+                completed=True,
+            ),
             TrackingEvent(step=ParcelStatus.PICKED_UP, completed=False),
             TrackingEvent(step=ParcelStatus.IN_TRANSIT, completed=False),
             TrackingEvent(step=ParcelStatus.AT_DESTINATION_BRANCH, completed=False),

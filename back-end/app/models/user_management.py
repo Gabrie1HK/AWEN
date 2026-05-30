@@ -18,3 +18,4 @@ class UserManagement(Base):
     address: Mapped[str | None] = mapped_column(String(200))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_login: Mapped[str | None] = mapped_column(String(40))
+    hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)

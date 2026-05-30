@@ -26,16 +26,23 @@ class ParcelBase(AppBaseModel):
     recipient_id: str = Field(..., min_length=1, max_length=40, alias="recipientId")
     recipient_phone: str = Field(..., min_length=1, max_length=40, alias="recipientPhone")
     recipient_address: str = Field(..., min_length=1, max_length=200, alias="recipientAddress")
+    origin_address: Optional[str] = Field(default=None, max_length=200, alias="originAddress")
+    origin_lat: Optional[float] = Field(default=None, alias="originLat")
+    origin_lng: Optional[float] = Field(default=None, alias="originLng")
+    destination_address: Optional[str] = Field(default=None, max_length=200, alias="destinationAddress")
+    destination_lat: Optional[float] = Field(default=None, alias="destinationLat")
+    destination_lng: Optional[float] = Field(default=None, alias="destinationLng")
     origin_branch: str = Field(..., min_length=1, max_length=120, alias="originBranch")
     destination_branch: str = Field(..., min_length=1, max_length=120, alias="destinationBranch")
     weight: float = Field(..., gt=0)
-    dimensions: str = Field(..., min_length=1, max_length=60)
+    dimensions: str = Field(default="N/A", max_length=60)
     declared_value: int = Field(..., ge=0, alias="declaredValue")
-    description: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(default="Sin descripción", max_length=200)
 
 
 class ParcelCreate(ParcelBase):
-    pass
+    origin_branch: Optional[str] = Field(default=None, max_length=120, alias="originBranch")
+    destination_branch: Optional[str] = Field(default=None, max_length=120, alias="destinationBranch")
 
 
 class ParcelUpdate(AppBaseModel):
@@ -46,6 +53,12 @@ class ParcelUpdate(AppBaseModel):
     recipient_id: Optional[str] = Field(default=None, alias="recipientId")
     recipient_phone: Optional[str] = Field(default=None, alias="recipientPhone")
     recipient_address: Optional[str] = Field(default=None, alias="recipientAddress")
+    origin_address: Optional[str] = Field(default=None, alias="originAddress")
+    origin_lat: Optional[float] = Field(default=None, alias="originLat")
+    origin_lng: Optional[float] = Field(default=None, alias="originLng")
+    destination_address: Optional[str] = Field(default=None, alias="destinationAddress")
+    destination_lat: Optional[float] = Field(default=None, alias="destinationLat")
+    destination_lng: Optional[float] = Field(default=None, alias="destinationLng")
     origin_branch: Optional[str] = Field(default=None, alias="originBranch")
     destination_branch: Optional[str] = Field(default=None, alias="destinationBranch")
     weight: Optional[float] = None
@@ -74,6 +87,12 @@ class PublicTrackingParcel(AppBaseModel):
     status: ParcelStatus
     origin_branch: str = Field(..., alias="originBranch")
     destination_branch: str = Field(..., alias="destinationBranch")
+    origin_address: Optional[str] = Field(default=None, alias="originAddress")
+    origin_lat: Optional[float] = Field(default=None, alias="originLat")
+    origin_lng: Optional[float] = Field(default=None, alias="originLng")
+    destination_address: Optional[str] = Field(default=None, alias="destinationAddress")
+    destination_lat: Optional[float] = Field(default=None, alias="destinationLat")
+    destination_lng: Optional[float] = Field(default=None, alias="destinationLng")
     sender: str
     recipient: str
     weight: float

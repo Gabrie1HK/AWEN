@@ -15,33 +15,16 @@ const STATUS_OPTIONS = [
   { value: 'Delivered', label: 'Entregado' },
 ]
 
-const MOCK_PARCELS = [
-  { id: 'ENV-001', guide: 'AWEN-2026-0001', sender: 'TechStore CA', recipient: 'Roberto Garcia', originBranch: 'Sucursal Central', destinationBranch: 'Sucursal Norte', status: 'In Transit', description: 'Notebook y accesorios', createdAt: '2026-05-10', recipientAddress: 'Av. Universidad 742, Caracas' },
-  { id: 'ENV-006', guide: 'AWEN-2026-0006', sender: 'Moda Urbana CA', recipient: 'Daniela Rojas', originBranch: 'Sucursal Central', destinationBranch: 'Sucursal Sur', status: 'In Transit', description: 'Ropa y accesorios', createdAt: '2026-05-11', recipientAddress: 'Av. Andres Bello 890, Barquisimeto' },
-]
-
-const MOCK_HISTORY_BASE = {
-  'AWEN-2026-0001': [
-    { step: 'Registered', date: '2026-05-10', time: '14:30', location: 'Sucursal Central', operator: 'Operador Carlos', completed: true },
-    { step: 'Picked Up', date: '2026-05-10', time: '16:00', location: 'Sucursal Central', operator: 'Conductor Pedro', completed: true },
-    { step: 'In Transit', date: '2026-05-11', time: '08:00', location: 'Autopista Regional del Centro', operator: 'Conductor Pedro', completed: true },
-  ],
-  'AWEN-2026-0006': [
-    { step: 'Registered', date: '2026-05-11', time: '10:00', location: 'Sucursal Central', operator: 'Operador Carlos', completed: true },
-    { step: 'Picked Up', date: '2026-05-12', time: '09:00', location: 'Sucursal Central', operator: 'Conductor Pedro', completed: true },
-  ],
-}
-
 export default function DriverDashboard() {
   const { user } = useAuth()
-  const [parcels, setParcels] = useState(MOCK_PARCELS)
+  const [parcels, setParcels] = useState([])
   const [selected, setSelected] = useState(null)
   const [tracking, setTracking] = useState(null)
   const [newStatus, setNewStatus] = useState('')
   const [note, setNote] = useState('')
-  const [notes, setNotes] = useState({})
+  const [noteIsPublic, setNoteIsPublic] = useState(false)
+  const [drvNotes, setDrvNotes] = useState([])
   const [msg, setMsg] = useState('')
-  const [history, setHistory] = useState(MOCK_HISTORY_BASE)
   const { loading, error, setError, execute } = useApi()
 
   useEffect(() => {
@@ -59,38 +42,44 @@ export default function DriverDashboard() {
     setNewStatus('')
     setNote('')
     setMsg('')
-    setTracking(history[p.guide] || [])
+    setDrvNotes([])
+    setTracking([])
+    parcelsApi.tracking(p.guide)
+      .then(res => setTracking(res || []))
+      .catch(() => setTracking([]))
+    parcelsApi.getNotes(p.guide)
+      .then(res => setDrvNotes(res || []))
+      .catch(() => {})
   }
 
   const handleUpdateStatus = () => {
-    if (!newStatus) return
-    const guide = selected.guide
+    if (!newStatus || !selected) return
     parcelsApi.updateStatus(selected.id, newStatus)
-      .then(() => {})
-      .catch(() => {})
-    const updatedHistory = [...(history[guide] || [])]
-    updatedHistory.push({
-      step: newStatus,
-      date: '2026-05-15',
-      time: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
-      location: 'En ruta',
-      operator: user?.name || 'Conductor',
-      completed: true,
-    })
-    setHistory({ ...history, [guide]: updatedHistory })
-    setTracking(updatedHistory)
-    setParcels(prev => prev.map(p => p.id === selected.id ? { ...p, status: newStatus } : p))
-    setSelected(prev => ({ ...prev, status: newStatus }))
-    setMsg('Estado actualizado correctamente')
+      .then((updated) => {
+        setParcels(prev => prev.map(p => p.id === selected.id ? updated : p))
+        setSelected(updated)
+        setMsg('Estado actualizado correctamente')
+        return parcelsApi.tracking(updated.guide)
+      })
+      .then(res => setTracking(res || []))
+      .catch((err) => {
+        setMsg(err?.message || 'No se pudo actualizar el estado')
+      })
   }
 
   const handleAddNote = () => {
     if (!note.trim()) return
-    const key = selected.guide
-    const existing = notes[key] || []
-    setNotes({ ...notes, [key]: [...existing, { text: note, date: new Date().toLocaleDateString(), by: user?.name }] })
+    const text = note
+    const isPublic = noteIsPublic
     setNote('')
-    setMsg('Notificacion agregada')
+    setNoteIsPublic(false)
+    parcelsApi.addNote(selected.guide, text, isPublic)
+      .then(() => {
+        setMsg(isPublic ? 'Comentario publicado' : 'Notificacion agregada')
+        return parcelsApi.getNotes(selected.guide)
+      })
+      .then(res => setDrvNotes(res || []))
+      .catch((err) => setMsg(err?.message || 'Error al agregar notificacion'))
   }
 
   return (
@@ -169,16 +158,22 @@ export default function DriverDashboard() {
             </div>
             <div className="chart-card">
               <h4 style={{ marginBottom: 12 }}>Agregar Notificacion</h4>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Ej: Retraso de 30 min por trafico" style={{ flex: 1 }} onKeyDown={e => e.key === 'Enter' && handleAddNote()} />
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="Ej: Retraso de 30 min por trafico" style={{ flex: 1, minWidth: 180 }} onKeyDown={e => e.key === 'Enter' && handleAddNote()} />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.813rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  <input type="checkbox" checked={noteIsPublic} onChange={e => setNoteIsPublic(e.target.checked)} />
+                  Publico
+                </label>
                 <button className="btn btn-primary" onClick={handleAddNote} disabled={!note.trim()}>Enviar</button>
               </div>
-              {notes[selected.guide] && notes[selected.guide].length > 0 && (
+              {drvNotes.length > 0 && (
                 <div style={{ marginTop: 12 }}>
-                  {notes[selected.guide].map((n, i) => (
+                  {drvNotes.map((n, i) => (
                     <div key={i} style={{ padding: '8px 12px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', marginBottom: 4, fontSize: '0.813rem' }}>
                       <p>{n.text}</p>
-                      <span style={{ fontSize: '0.688rem', color: 'var(--text-muted)' }}>{n.date} - {n.by}</span>
+                      <span style={{ fontSize: '0.688rem', color: 'var(--text-muted)' }}>
+                        {n.is_public ? '🔓 Publico' : '🔒 Interno'} &middot; {n.created_at} &middot; {n.created_by}
+                      </span>
                     </div>
                   ))}
                 </div>

@@ -4,6 +4,7 @@ from app.models.branch import Branch
 from app.models.delivery import Delivery
 from app.models.notification import Notification
 from app.models.parcel import Parcel
+from app.models.parcel_note import ParcelNote
 from app.models.tracking_event import TrackingEvent
 from app.models.user import User
 from app.models.user_management import UserManagement
@@ -16,6 +17,7 @@ __all__ = [
     "Delivery",
     "Notification",
     "Parcel",
+    "ParcelNote",
     "TrackingEvent",
     "User",
     "UserManagement",

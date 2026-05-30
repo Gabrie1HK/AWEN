@@ -29,6 +29,12 @@ class AppSettings(BaseSettings):
     rate_limit_max: int = 100
     rate_limit_window: int = 60
     database_url: str = "postgresql+psycopg://postgres:CHANGE_ME@localhost:5432/awen_db"
+    nominatim_url: str = "https://nominatim.openstreetmap.org/search"
+    nominatim_reverse_url: str = "https://nominatim.openstreetmap.org/reverse"
+    nominatim_user_agent: str = "AWEN-Tracking"
+    nominatim_timeout_seconds: float = 6.0
+    osrm_url: str = "https://router.project-osrm.org/route/v1/driving"
+    osrm_timeout_seconds: float = 6.0
 
     @field_validator("cors_origins", mode="before")
     @classmethod

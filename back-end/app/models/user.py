@@ -18,3 +18,4 @@ class User(Base):
     address: Mapped[str | None] = mapped_column(String(200))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    client_number: Mapped[int | None] = mapped_column(Integer, unique=True, nullable=True)

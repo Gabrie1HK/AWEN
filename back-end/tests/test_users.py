@@ -69,3 +69,35 @@ class TestUsers:
         assert response.status_code == 200
         get_response = client.get("/api/v1/users/1", headers=auth_headers)
         assert get_response.json()["active"] is False
+
+    def test_reset_password(self, client, auth_headers):
+        response = client.patch(
+            "/api/v1/users/1/password",
+            headers=auth_headers,
+            json={"new_password": "nuevaClave123"},
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "ok"
+
+    def test_reset_password_nonexistent_user(self, client, auth_headers):
+        response = client.patch(
+            "/api/v1/users/9999/password",
+            headers=auth_headers,
+            json={"new_password": "nuevaClave123"},
+        )
+        assert response.status_code == 404
+
+    def test_reset_password_short_password(self, client, auth_headers):
+        response = client.patch(
+            "/api/v1/users/1/password",
+            headers=auth_headers,
+            json={"new_password": "abc"},
+        )
+        assert response.status_code == 422
+
+    def test_reset_password_requires_auth(self, client):
+        response = client.patch(
+            "/api/v1/users/1/password",
+            json={"new_password": "nuevaClave123"},
+        )
+        assert response.status_code == 401

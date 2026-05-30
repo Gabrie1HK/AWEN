@@ -18,7 +18,17 @@ async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
-    throw new Error(err.detail?.message || err.message || 'Error de red')
+    let msg = 'Error de red'
+    if (Array.isArray(err.detail)) {
+      msg = err.detail.map(e => `${e.loc?.[e.loc.length-1] || 'campo'}: ${e.msg}`).join('; ')
+    } else if (typeof err.detail === 'string') {
+      msg = err.detail
+    } else if (typeof err.detail === 'object' && err.detail?.message) {
+      msg = err.detail.message
+    } else if (err.message) {
+      msg = err.message
+    }
+    throw new Error(msg)
   }
   const ct = res.headers.get('content-type') || ''
   if (ct.includes('application/json')) {
@@ -50,8 +60,23 @@ export const parcelsApi = {
   update: (id, data) => request(`/parcels/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   updateStatus: (id, status) => request(`/parcels/${id}/status`, { method: 'POST', body: JSON.stringify({ status }) }),
   cancel: (id) => request(`/parcels/${id}/cancel`, { method: 'POST' }),
+  remove: (id) => request(`/parcels/${id}`, { method: 'DELETE' }),
   tracking: (guide) => request(`/parcels/${guide}/tracking`),
   myParcels: () => request('/parcels/my-parcels'),
+  addNote: (guide, text, isPublic = false) => request(`/parcels/${guide}/notes`, { method: 'POST', body: JSON.stringify({ text, is_public: isPublic }) }),
+  getNotes: (guide) => request(`/parcels/${guide}/notes`),
+}
+
+export const mapsApi = {
+  getRoute: (originLat, originLng, destLat, destLng) => {
+    const q = new URLSearchParams({
+      origin_lat: originLat,
+      origin_lng: originLng,
+      destination_lat: destLat,
+      destination_lng: destLng,
+    })
+    return request(`/maps/route?${q}`)
+  },
 }
 
 export const trackingApi = {
@@ -115,6 +140,7 @@ export const usersApi = {
   create: (data) => request('/users', { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => request(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   delete: (id) => request(`/users/${id}`, { method: 'DELETE' }),
+  resetPassword: (id, newPassword) => request(`/users/${id}/password`, { method: 'PATCH', body: JSON.stringify({ new_password: newPassword }) }),
   me: () => request('/users/me'),
   updateMe: (data) => request('/users/me', { method: 'PATCH', body: JSON.stringify(data) }),
 }
@@ -141,7 +167,17 @@ async function requestForm(path, formData) {
   const res = await fetch(`${BASE_URL}${path}`, { method: 'POST', headers, body: formData })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
-    throw new Error(err.detail?.message || err.message || 'Error de red')
+    let msg = 'Error de red'
+    if (Array.isArray(err.detail)) {
+      msg = err.detail.map(e => `${e.loc?.[e.loc.length-1] || 'campo'}: ${e.msg}`).join('; ')
+    } else if (typeof err.detail === 'string') {
+      msg = err.detail
+    } else if (typeof err.detail === 'object' && err.detail?.message) {
+      msg = err.detail.message
+    } else if (err.message) {
+      msg = err.message
+    }
+    throw new Error(msg)
   }
   const ct = res.headers.get('content-type') || ''
   if (ct.includes('text/html')) {
