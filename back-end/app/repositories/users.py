@@ -39,6 +39,8 @@ class InMemoryUserRepository(UserRepository):
             UserPublic(
                 id=u.id,
                 name=u.name,
+                last_name=u.last_name,
+                ci=u.ci,
                 email=u.email,
                 role=u.role,
                 branch=u.branch,
@@ -61,6 +63,8 @@ class SqlAlchemyUserRepository(UserRepository):
         return UserInDB(
             id=user.id,
             name=user.name,
+            last_name=user.last_name,
+            ci=user.ci,
             email=user.email,
             role=user.role,
             branch=user.branch,
@@ -78,6 +82,8 @@ class SqlAlchemyUserRepository(UserRepository):
         return UserInDB(
             id=user.id,
             name=user.name,
+            last_name=user.last_name,
+            ci=user.ci,
             email=user.email,
             role=user.role,
             branch=user.branch,
@@ -95,6 +101,8 @@ class SqlAlchemyUserRepository(UserRepository):
             UserPublic(
                 id=u.id,
                 name=u.name,
+                last_name=u.last_name,
+                ci=u.ci,
                 email=u.email,
                 role=u.role,
                 branch=u.branch,

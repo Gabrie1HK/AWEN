@@ -11,10 +11,16 @@ export default function ClientProfile() {
   const { user } = useAuth()
   const [profile, setProfile] = useState({
     name: user?.name || '',
+    last_name: user?.last_name || '',
+    ci: user?.ci || '',
     phone: user?.phone || '',
     address: user?.address || '',
   })
   const [editing, setEditing] = useState(false)
+  const [ciType, setCiType] = useState('V')
+  const [ciNumber, setCiNumber] = useState('')
+  const [recipientIdType, setRecipientIdType] = useState('V')
+  const [recipientPhonePrefix, setRecipientPhonePrefix] = useState('0412')
   const [message, setMessage] = useState('')
   const [selectedGuide, setSelectedGuide] = useState(null)
   const [tracking, setTracking] = useState(null)
@@ -35,6 +41,7 @@ export default function ClientProfile() {
     senderId: '',
     senderPhone: '',
     recipient: '',
+    recipientLastName: '',
     recipientId: '',
     recipientPhone: '',
     recipientAddress: '',
@@ -146,15 +153,17 @@ export default function ClientProfile() {
     setMapStep('origin')
     setOriginPoint(null)
     setDestinationPoint(null)
+    setRecipientIdType('V')
+    setRecipientPhonePrefix('0412')
     setCreateError('')
     setFormData({
-      sender: profile.name || user?.name || '',
-      senderId: '',
+      sender: (profile.name || user?.name || '') + ' ' + (profile.last_name || user?.last_name || ''),
+      senderId: profile.ci || user?.ci || '',
       senderPhone: profile.phone || user?.phone || '',
       recipient: '',
+      recipientLastName: '',
       recipientId: '',
       recipientPhone: '',
-      recipientAddress: '',
       weight: '',
       dimensions: '',
       declaredValue: '',
@@ -172,7 +181,8 @@ export default function ClientProfile() {
       ['sender', 'Remitente'],
       ['senderId', 'ID Remitente'],
       ['senderPhone', 'Teléfono Remitente'],
-      ['recipient', 'Destinatario'],
+      ['recipient', 'Nombre del destinatario'],
+      ['recipientLastName', 'Apellido del destinatario'],
       ['recipientId', 'ID Destinatario'],
       ['recipientPhone', 'Teléfono Destinatario'],
       ['recipientAddress', 'Dirección Destinatario'],
@@ -192,7 +202,7 @@ export default function ClientProfile() {
       sender: formData.sender,
       senderId: formData.senderId,
       senderPhone: formData.senderPhone,
-      recipient: formData.recipient,
+      recipient: (formData.recipient + ' ' + formData.recipientLastName).trim(),
       recipientId: formData.recipientId,
       recipientPhone: formData.recipientPhone,
       recipientAddress: formData.recipientAddress,
@@ -248,32 +258,50 @@ export default function ClientProfile() {
           {!editing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div><strong>Nombre:</strong> {profile.name}</div>
+              <div><strong>Apellido:</strong> {profile.last_name || '—'}</div>
+              <div><strong>Documento de Identidad:</strong> {profile.ci || '—'}</div>
+              <div><strong>Teléfono:</strong> {profile.phone || '—'}</div>
+              <div><strong>Dirección:</strong> {profile.address || '—'}</div>
               <div><strong>Email:</strong> {user?.email}</div>
-              <div><strong>Telefono:</strong> {profile.phone || '—'}</div>
-              <div><strong>Direccion:</strong> {profile.address || '—'}</div>
-              <button className="btn btn-outline" style={{ marginTop: 12, alignSelf: 'flex-start' }} onClick={() => setEditing(true)}>Editar Datos</button>
+              <button className="btn btn-outline" style={{ marginTop: 12, alignSelf: 'flex-start' }} onClick={() => { setCiType((profile.ci || '-').split('-')[0] || 'V'); setCiNumber((profile.ci || '-').split('-')[1] || ''); setEditing(true) }}>Editar Datos</button>
             </div>
           ) : (
             <div className="form-grid">
               <div className="form-field">
                 <label>Nombre</label>
-                <input type="text" value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} />
+                <input type="text" value={profile.name} disabled style={{ opacity: 0.6 }} />
+              </div>
+              <div className="form-field">
+                <label>Apellido</label>
+                <input type="text" value={profile.last_name} disabled style={{ opacity: 0.6 }} />
+              </div>
+              <div className="form-field">
+                <label>Documento de Identidad</label>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+                  <select value={ciType} disabled style={{ width: 64, flexShrink: 0, opacity: 0.6 }}>
+                    <option value="V">V</option>
+                    <option value="E">E</option>
+                    <option value="J">J</option>
+                  </select>
+                  <span style={{ display: 'flex', alignItems: 'center', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>-</span>
+                  <input type="text" value={ciNumber} disabled style={{ flex: 1, opacity: 0.6 }} />
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Teléfono</label>
+                <input type="text" value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} placeholder="+58 XXX XXX XXXX" />
+              </div>
+              <div className="form-field form-field-full">
+                <label>Dirección</label>
+                <input type="text" value={profile.address} onChange={e => setProfile({ ...profile, address: e.target.value })} placeholder="Calle, ciudad" />
               </div>
               <div className="form-field">
                 <label>Email</label>
                 <input type="email" value={user?.email || ''} disabled style={{ opacity: 0.6 }} />
               </div>
-              <div className="form-field">
-                <label>Telefono</label>
-                <input type="text" value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} placeholder="+58 XXX XXX XXXX" />
-              </div>
-              <div className="form-field form-field-full">
-                <label>Direccion</label>
-                <input type="text" value={profile.address} onChange={e => setProfile({ ...profile, address: e.target.value })} placeholder="Calle, ciudad" />
-              </div>
               {message && <p style={{ color: 'var(--status-delivered)', fontSize: '0.875rem' }}>{message}</p>}
               <div className="modal-actions" style={{ marginTop: 8 }}>
-                <button className="btn btn-outline" onClick={() => { setEditing(false); setMessage('') }}>Cancelar</button>
+                <button className="btn btn-outline" onClick={() => { setEditing(false); setMessage(''); setCiType('V'); setCiNumber('') }}>Cancelar</button>
                 <button className="btn btn-primary" onClick={handleSave}>Guardar</button>
               </div>
             </div>
@@ -284,9 +312,12 @@ export default function ClientProfile() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
             <h3>Envio Reciente</h3>
             <button className="btn btn-primary" onClick={() => {
+              setRecipientIdType('V')
+              setRecipientPhonePrefix('0412')
               setFormData(prev => ({
                 ...prev,
-                sender: profile.name || user?.name || '',
+                sender: (profile.name || user?.name || '') + ' ' + (profile.last_name || user?.last_name || ''),
+                senderId: profile.ci || user?.ci || '',
                 senderPhone: profile.phone || user?.phone || '',
               }))
               setShowCreate(true)
@@ -406,27 +437,49 @@ export default function ClientProfile() {
             <div className="form-grid">
               <div className="form-field">
                 <label>Remitente</label>
-                <input value={formData.sender} onChange={updateField('sender')} />
+                <input value={formData.sender} disabled style={{ opacity: 0.6 }} />
               </div>
               <div className="form-field">
                 <label>ID Remitente</label>
-                <input value={formData.senderId} onChange={updateField('senderId')} />
+                <input value={formData.senderId} disabled style={{ opacity: 0.6 }} />
               </div>
               <div className="form-field">
                 <label>Telefono Remitente</label>
-                <input value={formData.senderPhone} onChange={updateField('senderPhone')} />
+                <input value={formData.senderPhone} disabled style={{ opacity: 0.6 }} />
               </div>
               <div className="form-field">
-                <label>Destinatario *</label>
-                <input value={formData.recipient} onChange={updateField('recipient')} />
+                <label>Nombre del destinatario *</label>
+                <input value={formData.recipient} onChange={updateField('recipient')} placeholder="Nombre" />
+              </div>
+              <div className="form-field">
+                <label>Apellido del destinatario *</label>
+                <input value={formData.recipientLastName} onChange={updateField('recipientLastName')} placeholder="Apellido" />
               </div>
               <div className="form-field">
                 <label>ID Destinatario *</label>
-                <input value={formData.recipientId} onChange={updateField('recipientId')} />
+                <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+                  <select value={recipientIdType} onChange={e => { const t = e.target.value; setRecipientIdType(t); setFormData(prev => ({ ...prev, recipientId: t + '-' + (prev.recipientId.split('-')[1] || '') })) }} style={{ width: 64, flexShrink: 0 }}>
+                    <option value="V">V</option>
+                    <option value="E">E</option>
+                    <option value="J">J</option>
+                  </select>
+                  <span style={{ display: 'flex', alignItems: 'center', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>-</span>
+                  <input value={formData.recipientId.split('-')[1] || ''} onChange={e => setFormData(prev => ({ ...prev, recipientId: recipientIdType + '-' + e.target.value }))} placeholder="12345678" style={{ flex: 1 }} />
+                </div>
               </div>
               <div className="form-field">
                 <label>Telefono Destinatario *</label>
-                <input value={formData.recipientPhone} onChange={updateField('recipientPhone')} />
+                <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+                  <select value={recipientPhonePrefix} onChange={e => { const p = e.target.value; setRecipientPhonePrefix(p); setFormData(prev => ({ ...prev, recipientPhone: p + '-' + (prev.recipientPhone.split('-')[1] || '') })) }} style={{ width: 80, flexShrink: 0 }}>
+                    <option value="0412">0412</option>
+                    <option value="0414">0414</option>
+                    <option value="0416">0416</option>
+                    <option value="0424">0424</option>
+                    <option value="0426">0426</option>
+                  </select>
+                  <span style={{ display: 'flex', alignItems: 'center', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>-</span>
+                  <input value={formData.recipientPhone.split('-')[1] || ''} onChange={e => setFormData(prev => ({ ...prev, recipientPhone: recipientPhonePrefix + '-' + e.target.value }))} placeholder="1234567" style={{ flex: 1 }} />
+                </div>
               </div>
               <div className="form-field form-field-full">
                 <label>Direccion Destinatario *</label>

@@ -17,6 +17,8 @@ class UserRole(str, Enum):
 
 class UserBase(AppBaseModel):
     name: str = Field(..., min_length=1, max_length=120)
+    last_name: Optional[str] = Field(default=None, max_length=120)
+    ci: Optional[str] = Field(default=None, max_length=20)
     email: str = Field(..., min_length=3, max_length=120)
     role: UserRole
     branch: Optional[str] = Field(default=None, max_length=120)
@@ -32,6 +34,8 @@ class UserCreate(UserBase):
 
 class UserUpdate(AppBaseModel):
     name: Optional[str] = None
+    last_name: Optional[str] = None
+    ci: Optional[str] = None
     email: Optional[str] = None
     role: Optional[UserRole] = None
     branch: Optional[str] = None

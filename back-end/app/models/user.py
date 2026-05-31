@@ -11,6 +11,8 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
+    last_name: Mapped[str | None] = mapped_column(String(120))
+    ci: Mapped[str | None] = mapped_column(String(20))
     email: Mapped[str] = mapped_column(String(120), unique=True, index=True, nullable=False)
     role: Mapped[str] = mapped_column(String(40), nullable=False)
     branch: Mapped[str | None] = mapped_column(String(120))

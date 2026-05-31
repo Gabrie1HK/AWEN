@@ -53,9 +53,15 @@ def get_logistics_service(
 
 
 def get_report_service(
+    db: AsyncSession = Depends(get_db),
     notifications: NotificationService = Depends(get_notification_service),
 ) -> ReportService:
-    return ReportService(notifications)
+    return ReportService(
+        SqlAlchemyParcelRepository(db),
+        SqlAlchemyDeliveryRepository(db),
+        SqlAlchemyUserManagementRepository(db),
+        notifications,
+    )
 
 
 def get_branch_service(db: AsyncSession = Depends(get_db)) -> BranchService:

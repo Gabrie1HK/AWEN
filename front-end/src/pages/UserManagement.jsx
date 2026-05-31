@@ -17,7 +17,10 @@ const roleOptions = [
 
 const columns = (onEdit, onDelete, onResetPassword) => [
   { key: 'name', label: 'Nombre', sortable: true },
+  { key: 'last_name', label: 'Apellido', sortable: true },
+  { key: 'ci', label: 'Documento', sortable: true },
   { key: 'email', label: 'Email', sortable: true },
+  { key: 'phone', label: 'Teléfono' },
   { key: 'role', label: 'Rol', render: (r) => <RoleBadge role={r.role} /> },
   { key: 'branch', label: 'Sucursal', sortable: true },
   { key: 'active', label: 'Estado', sortable: true, render: (r) => (
@@ -120,7 +123,27 @@ export default function UserManagement() {
             <div className="form-grid">
               <div className="form-field">
                 <label>Nombre</label>
-                <input name="name" type="text" placeholder="Nombre completo" defaultValue={editUser.name || ''} />
+                <input name="name" type="text" placeholder="Nombre" defaultValue={editUser.name || ''} />
+              </div>
+              <div className="form-field">
+                <label>Apellido</label>
+                <input name="last_name" type="text" placeholder="Apellido" defaultValue={editUser.last_name || ''} />
+              </div>
+              <div className="form-field">
+                <label>Documento de Identidad</label>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+                  <select name="ci_type" defaultValue={(editUser.ci || '-').split('-')[0] || 'V'} style={{ width: 64, flexShrink: 0 }}>
+                    <option value="V">V</option>
+                    <option value="E">E</option>
+                    <option value="J">J</option>
+                  </select>
+                  <span style={{ display: 'flex', alignItems: 'center', fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-secondary)' }}>-</span>
+                  <input name="ci_number" type="text" placeholder="12345678" defaultValue={(editUser.ci || '-').split('-')[1] || ''} style={{ flex: 1 }} />
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Teléfono</label>
+                <input name="phone" type="text" placeholder="+58 XXX XXX XXXX" defaultValue={editUser.phone || ''} />
               </div>
               <div className="form-field">
                 <label>Email</label>
@@ -140,6 +163,10 @@ export default function UserManagement() {
                   {branchList.filter(b => b.active).map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
                 </select>
               </div>
+              <div className="form-field form-field-full">
+                <label>Dirección</label>
+                <input name="address" type="text" placeholder="Calle, ciudad" defaultValue={editUser.address || ''} />
+              </div>
               <div className="form-field form-field-full" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
                 <input type="checkbox" id="active-toggle" defaultChecked={editUser.active !== false} />
                 <label htmlFor="active-toggle" style={{ margin: 0 }}>Usuario Activo</label>
@@ -152,7 +179,9 @@ export default function UserManagement() {
                 if (!f) return
                 const get = (n) => f.querySelector(`[name="${n}"]`)?.value || ''
                 const checked = f.querySelector('#active-toggle')?.checked ?? true
-                const data = { name: get('name'), email: get('email'), role: get('role'), branch: get('branch'), active: checked }
+                const ciType = get('ci_type') || 'V'
+                const ciNumber = get('ci_number') || ''
+                const data = { name: get('name'), last_name: get('last_name'), ci: ciType + '-' + ciNumber, phone: get('phone'), email: get('email'), role: get('role'), branch: get('branch'), address: get('address'), active: checked }
                 if (editUser?.id) {
                   usersApi.update(editUser.id, data)
                     .then(r => setUserList(prev => prev.map(u => u.id === editUser.id ? r : u)))

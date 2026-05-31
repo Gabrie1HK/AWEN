@@ -1,0 +1,44 @@
+from app.core.security import get_password_hash
+from app.schemas.user import UserInDB
+from app.schemas.user_management import UserPublic, UserRole
+
+
+def seed_additional_clients_users() -> list[UserInDB]:
+    password_hash = get_password_hash("123456")
+    return [
+        UserInDB(id=8,  name="Carlos",     last_name="Mendoza",   ci="V-10123456", email="carlos.mendoza@email.com",     role="Client", branch=None, phone="0412-1112233", address="Av. 4 de Mayo 234, Maturin, Monagas",        active=True, client_number=100, hashed_password=password_hash),
+        UserInDB(id=9,  name="Maria",      last_name="Lopez",     ci="V-11123457", email="maria.lopez@email.com",       role="Client", branch=None, phone="0414-2223344", address="Calle 9 con Av. 6 567, San Cristobal, Tachira", active=True, client_number=101, hashed_password=password_hash),
+        UserInDB(id=10, name="Jose",       last_name="Hernandez", ci="V-12123458", email="jose.hernandez@email.com",    role="Client", branch=None, phone="0416-3334455", address="Av. Bolivar 890, Barquisimeto, Lara",       active=True, client_number=102, hashed_password=password_hash),
+        UserInDB(id=11, name="Ana",        last_name="Rivas",     ci="V-13123459", email="ana.rivas@email.com",        role="Client", branch=None, phone="0424-4445566", address="Calle 72 con Av. 5 123, Maracaibo, Zulia",   active=True, client_number=103, hashed_password=password_hash),
+        UserInDB(id=12, name="Luis",       last_name="Torres",    ci="V-14123460", email="luis.torres@email.com",      role="Client", branch=None, phone="0412-5556677", address="Av. Las Delicias 456, Maracay, Aragua",      active=True, client_number=104, hashed_password=password_hash),
+        UserInDB(id=13, name="Daniela",    last_name="Silva",     ci="V-15123461", email="daniela.silva@email.com",    role="Client", branch=None, phone="0414-6667788", address="Urb. El Bosque 789, Valencia, Carabobo",     active=True, client_number=105, hashed_password=password_hash),
+        UserInDB(id=14, name="Pedro",      last_name="Castillo",  ci="V-16123462", email="pedro.castillo@email.com",   role="Client", branch=None, phone="0416-7778899", address="Av. Fuerzas Armadas 321, Barcelona, Anzoategui", active=True, client_number=106, hashed_password=password_hash),
+        UserInDB(id=15, name="Sofia",      last_name="Medina",    ci="V-17123463", email="sofia.medina@email.com",     role="Client", branch=None, phone="0426-8889900", address="Calle 60 654, Merida, Merida",               active=True, client_number=107, hashed_password=password_hash),
+        UserInDB(id=16, name="Ricardo",    last_name="Paredes",   ci="V-18123464", email="ricardo.paredes@email.com",  role="Client", branch=None, phone="0412-9990011", address="Av. Universidad 987, Caracas, Distrito Capital", active=True, client_number=108, hashed_password=password_hash),
+        UserInDB(id=17, name="Gabriela",   last_name="Contreras", ci="V-19123465", email="gabriela.contreras@email.com", role="Client", branch=None, phone="0414-1112234", address="Av. 5 de Julio 234, Ciudad Guayana, Bolivar",  active=True, client_number=109, hashed_password=password_hash),
+        UserInDB(id=18, name="Andres",     last_name="Guzman",    ci="V-20123466", email="andres.guzman@email.com",    role="Client", branch=None, phone="0416-2223345", address="Calle 77 567, Maracaibo, Zulia",              active=True, client_number=110, hashed_password=password_hash),
+        UserInDB(id=19, name="Valentina",  last_name="Romero",    ci="V-21123467", email="valentina.romero@email.com", role="Client", branch=None, phone="0424-3334456", address="Av. Los Proceres 890, Caracas, Distrito Capital", active=True, client_number=111, hashed_password=password_hash),
+        UserInDB(id=20, name="Diego",      last_name="Blanco",    ci="V-22123468", email="diego.blanco@email.com",     role="Client", branch=None, phone="0412-4445567", address="Calle 42 123, Puerto La Cruz, Anzoategui",    active=True, client_number=112, hashed_password=password_hash),
+        UserInDB(id=21, name="Isabella",   last_name="Ferrer",    ci="V-23123469", email="isabella.ferrer@email.com",  role="Client", branch=None, phone="0414-5556678", address="Av. Andres Bello 456, Valencia, Carabobo",     active=True, client_number=113, hashed_password=password_hash),
+        UserInDB(id=22, name="Samuel",     last_name="Salazar",   ci="V-24123470", email="samuel.salazar@email.com",   role="Client", branch=None, phone="0416-6667789", address="Calle 59 789, El Tigre, Anzoategui",          active=True, client_number=114, hashed_password=password_hash),
+    ]
+
+
+def seed_additional_clients_management() -> list[UserPublic]:
+    return [
+        UserPublic(id=8,  name="Carlos",     last_name="Mendoza",   ci="V-10123456", email="carlos.mendoza@email.com",     role=UserRole.CLIENT, branch=None, phone="0412-1112233", address="Av. 4 de Mayo 234, Maturin, Monagas",        active=True, lastLogin="2026-05-20 10:00"),
+        UserPublic(id=9,  name="Maria",      last_name="Lopez",     ci="V-11123457", email="maria.lopez@email.com",       role=UserRole.CLIENT, branch=None, phone="0414-2223344", address="Calle 9 con Av. 6 567, San Cristobal, Tachira", active=True, lastLogin="2026-05-21 11:30"),
+        UserPublic(id=10, name="Jose",       last_name="Hernandez", ci="V-12123458", email="jose.hernandez@email.com",    role=UserRole.CLIENT, branch=None, phone="0416-3334455", address="Av. Bolivar 890, Barquisimeto, Lara",       active=True, lastLogin="2026-05-22 09:15"),
+        UserPublic(id=11, name="Ana",        last_name="Rivas",     ci="V-13123459", email="ana.rivas@email.com",        role=UserRole.CLIENT, branch=None, phone="0424-4445566", address="Calle 72 con Av. 5 123, Maracaibo, Zulia",   active=True, lastLogin="2026-05-23 14:45"),
+        UserPublic(id=12, name="Luis",       last_name="Torres",    ci="V-14123460", email="luis.torres@email.com",      role=UserRole.CLIENT, branch=None, phone="0412-5556677", address="Av. Las Delicias 456, Maracay, Aragua",      active=True, lastLogin="2026-05-24 08:00"),
+        UserPublic(id=13, name="Daniela",    last_name="Silva",     ci="V-15123461", email="daniela.silva@email.com",    role=UserRole.CLIENT, branch=None, phone="0414-6667788", address="Urb. El Bosque 789, Valencia, Carabobo",     active=True, lastLogin="2026-05-25 16:20"),
+        UserPublic(id=14, name="Pedro",      last_name="Castillo",  ci="V-16123462", email="pedro.castillo@email.com",   role=UserRole.CLIENT, branch=None, phone="0416-7778899", address="Av. Fuerzas Armadas 321, Barcelona, Anzoategui", active=True, lastLogin="2026-05-26 12:10"),
+        UserPublic(id=15, name="Sofia",      last_name="Medina",    ci="V-17123463", email="sofia.medina@email.com",     role=UserRole.CLIENT, branch=None, phone="0426-8889900", address="Calle 60 654, Merida, Merida",               active=True, lastLogin="2026-05-27 10:30"),
+        UserPublic(id=16, name="Ricardo",    last_name="Paredes",   ci="V-18123464", email="ricardo.paredes@email.com",  role=UserRole.CLIENT, branch=None, phone="0412-9990011", address="Av. Universidad 987, Caracas, Distrito Capital", active=True, lastLogin="2026-05-28 09:00"),
+        UserPublic(id=17, name="Gabriela",   last_name="Contreras", ci="V-19123465", email="gabriela.contreras@email.com", role=UserRole.CLIENT, branch=None, phone="0414-1112234", address="Av. 5 de Julio 234, Ciudad Guayana, Bolivar",  active=True, lastLogin="2026-05-29 15:45"),
+        UserPublic(id=18, name="Andres",     last_name="Guzman",    ci="V-20123466", email="andres.guzman@email.com",    role=UserRole.CLIENT, branch=None, phone="0416-2223345", address="Calle 77 567, Maracaibo, Zulia",              active=True, lastLogin="2026-05-30 11:20"),
+        UserPublic(id=19, name="Valentina",  last_name="Romero",    ci="V-21123467", email="valentina.romero@email.com", role=UserRole.CLIENT, branch=None, phone="0424-3334456", address="Av. Los Proceres 890, Caracas, Distrito Capital", active=True, lastLogin="2026-05-30 08:30"),
+        UserPublic(id=20, name="Diego",      last_name="Blanco",    ci="V-22123468", email="diego.blanco@email.com",     role=UserRole.CLIENT, branch=None, phone="0412-4445567", address="Calle 42 123, Puerto La Cruz, Anzoategui",    active=True, lastLogin="2026-05-29 17:00"),
+        UserPublic(id=21, name="Isabella",   last_name="Ferrer",    ci="V-23123469", email="isabella.ferrer@email.com",  role=UserRole.CLIENT, branch=None, phone="0414-5556678", address="Av. Andres Bello 456, Valencia, Carabobo",     active=True, lastLogin="2026-05-28 13:10"),
+        UserPublic(id=22, name="Samuel",     last_name="Salazar",   ci="V-24123470", email="samuel.salazar@email.com",   role=UserRole.CLIENT, branch=None, phone="0416-6667789", address="Calle 59 789, El Tigre, Anzoategui",          active=True, lastLogin="2026-05-27 09:45"),
+    ]

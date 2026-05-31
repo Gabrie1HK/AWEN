@@ -60,10 +60,7 @@ class InMemoryUserManagementRepository(UserManagementRepository):
         existing = self._users.get(user_id)
         if not existing:
             return False
-        data = existing.model_dump(by_alias=True)
-        data["active"] = False
-        updated = UserPublic(**data)
-        self._users[user_id] = updated
+        del self._users[user_id]
         return True
 
     async def update_password(self, user_id: int, hashed_password: str) -> bool:
@@ -84,6 +81,8 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
             UserPublic(
                 id=u.id,
                 name=u.name,
+                last_name=u.last_name,
+                ci=u.ci,
                 email=u.email,
                 role=u.role,
                 branch=u.branch,
@@ -102,6 +101,8 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
         return UserPublic(
             id=user.id,
             name=user.name,
+            last_name=user.last_name,
+            ci=user.ci,
             email=user.email,
             role=user.role,
             branch=user.branch,
@@ -115,6 +116,8 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
         record = UserManagement(
             id=user.id,
             name=user.name,
+            last_name=user.last_name,
+            ci=user.ci,
             email=user.email,
             role=user.role,
             branch=user.branch,
@@ -131,6 +134,8 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
         auth_user = User(
             id=user.id,
             name=user.name,
+            last_name=user.last_name,
+            ci=user.ci,
             email=user.email,
             role=user.role,
             branch=user.branch,
@@ -165,6 +170,8 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
         return UserPublic(
             id=user.id,
             name=user.name,
+            last_name=user.last_name,
+            ci=user.ci,
             email=user.email,
             role=user.role,
             branch=user.branch,
@@ -178,10 +185,10 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
         user = await self._session.get(UserManagement, user_id)
         if not user:
             return False
-        user.active = False
+        await self._session.delete(user)
         auth_user = await self._session.get(User, user_id)
         if auth_user:
-            auth_user.active = False
+            await self._session.delete(auth_user)
         await self._session.commit()
         return True
 

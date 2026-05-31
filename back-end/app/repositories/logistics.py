@@ -141,7 +141,7 @@ class SqlAlchemyBatchRepository(BatchRepository):
             vehicle=batch.vehicle,
             driver=batch.driver,
             driverId=batch.driver_id,
-            parcelCount=batch.parcel_count,
+            parcelCount=len(parcels),
         )
 
 

@@ -37,16 +37,12 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(loadSession)
 
   const login = useCallback(async (email, password) => {
-    try {
-      const data = await authApi.login(email, password)
-      setAuthToken(data.access_token)
-      const userData = { ...data.user, avatar: null }
-      setUser(userData)
-      saveSession(userData, data.access_token)
-      return userData
-    } catch {
-      return null
-    }
+    const data = await authApi.login(email, password)
+    setAuthToken(data.access_token)
+    const userData = { ...data.user, avatar: null }
+    setUser(userData)
+    saveSession(userData, data.access_token)
+    return userData
   }, [])
 
   const logout = useCallback(() => {

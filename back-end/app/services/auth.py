@@ -17,7 +17,7 @@ class AuthService:
         if not user or not verify_password(password, user.hashed_password):
             raise UnauthorizedError("Credenciales invalidas")
         if not user.active:
-            raise UnauthorizedError("Usuario inactivo")
+            raise UnauthorizedError("Error usuario inactivo, contacte al administrador")
 
         settings = get_settings()
         access_token = create_access_token(

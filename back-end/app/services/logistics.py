@@ -67,6 +67,7 @@ class LogisticsService:
             vehicle=payload.vehicle,
             driver=payload.driver,
             driver_id=payload.driver_id,
+            parcels=payload.parcels,
             status=payload.status or BatchStatus.ASSIGNED,
         )
         result = await self.update_batch(batch_id, update)

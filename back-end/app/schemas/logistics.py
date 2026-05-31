@@ -58,6 +58,7 @@ class BatchAssign(AppBaseModel):
     vehicle: str
     driver: str
     driver_id: Optional[int] = Field(default=None, alias="driverId")
+    parcels: Optional[list[str]] = None
     status: Optional[BatchStatus] = None
 
 

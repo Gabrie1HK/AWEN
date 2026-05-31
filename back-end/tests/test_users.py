@@ -21,7 +21,9 @@ class TestUsers:
     def test_get_user(self, client, auth_headers):
         response = client.get("/api/v1/users/1", headers=auth_headers)
         assert response.status_code == 200
-        assert response.json()["name"] == "Admin Principal"
+        assert response.json()["name"] == "Admin"
+        assert response.json()["last_name"] == "Principal"
+        assert response.json()["ci"] == "V-12345678"
 
     def test_create_user(self, client, auth_headers):
         response = client.post(

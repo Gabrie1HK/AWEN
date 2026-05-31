@@ -12,6 +12,10 @@ class KPIResponse(AppBaseModel):
     in_transit: int = Field(..., alias="inTransit")
     delivered: int
     returned: int
+    total_shipments_trend: int = Field(0, alias="totalShipmentsTrend")
+    in_transit_trend: int = Field(0, alias="inTransitTrend")
+    delivered_trend: int = Field(0, alias="deliveredTrend")
+    returned_trend: int = Field(0, alias="returnedTrend")
 
 
 class DailyShipmentPoint(AppBaseModel):

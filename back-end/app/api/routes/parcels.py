@@ -44,7 +44,7 @@ async def my_parcels(
     service: ParcelService = Depends(get_parcel_service),
     user=Depends(get_current_user),
 ) -> list[ParcelPublic]:
-    return await service.list_by_user(user.name)
+    return await service.list_by_user(user.name, user.last_name)
 
 
 @router.get("/{parcel_id}", response_model=ParcelPublic)

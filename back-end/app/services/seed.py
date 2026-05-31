@@ -7,7 +7,9 @@ def seed_users() -> list[UserInDB]:
     return [
         UserInDB(
             id=1,
-            name="Admin Principal",
+            name="Admin",
+            last_name="Principal",
+            ci="V-12345678",
             email="admin@awen.com",
             role="Admin",
             branch="Sucursal Central",
@@ -18,7 +20,9 @@ def seed_users() -> list[UserInDB]:
         ),
         UserInDB(
             id=2,
-            name="Operador Carlos",
+            name="Carlos",
+            last_name="Operador",
+            ci="V-23456789",
             email="operador.carlos@awen.com",
             role="Warehouse Operator",
             branch="Sucursal Central",
@@ -29,7 +33,9 @@ def seed_users() -> list[UserInDB]:
         ),
         UserInDB(
             id=4,
-            name="Conductor Pedro",
+            name="Pedro",
+            last_name="Conductor",
+            ci="V-34567890",
             email="conductor.pedro@awen.com",
             role="Driver",
             branch="Sucursal Central",
@@ -40,7 +46,9 @@ def seed_users() -> list[UserInDB]:
         ),
         UserInDB(
             id=6,
-            name="Cliente Juan",
+            name="Juan",
+            last_name="Cliente",
+            ci="V-67890123",
             email="juan@email.com",
             role="Client",
             branch=None,

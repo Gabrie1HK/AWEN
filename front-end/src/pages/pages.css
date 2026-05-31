@@ -84,7 +84,7 @@
 .login-error { color: #ef4444; font-size: 0.813rem; margin-bottom: 8px; }
 .login-forgot { display: block; font-size: 0.813rem; color: #94a3b8; margin-top: 16px; }
 .login-forgot:hover { color: #1e3a8a; }
-.login-hint { margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0; }
+.login-forgot-msg { margin-top: 12px; font-size: 0.813rem; color: #64748b; text-align: center; }
 .login-hint p { font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px; }
 .login-hint code { display: block; font-size: 0.688rem; color: #64748b; font-family: 'JetBrains Mono', monospace; padding: 2px 0; }
 
@@ -443,6 +443,7 @@
   padding: var(--space-md); background: var(--bg-tertiary);
   border: 1px solid var(--border-medium); border-radius: var(--radius-md);
 }
+.batch-card.expanded { border-color: var(--accent-primary); }
 .parcel-chip {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 2px 8px; font-size: 0.75rem; background: var(--surface-elevated);
@@ -473,6 +474,13 @@
 }
 .map-placeholder p { font-weight: 600; color: var(--text-secondary); }
 .map-placeholder span { font-size: 0.75rem; }
+.driver-card.available { border-color: var(--status-delivered); }
+.form-select {
+  background: var(--surface-base); color: var(--text-primary);
+  border: 1px solid var(--border-medium); border-radius: var(--radius-md);
+  font-family: inherit; cursor: pointer;
+}
+.form-select:focus { outline: none; border-color: var(--accent-primary); }
 
 /* === POD === */
 .pod-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); }

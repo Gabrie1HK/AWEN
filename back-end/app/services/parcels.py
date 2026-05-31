@@ -62,17 +62,12 @@ class ParcelService:
             items = [p for p in items if p.destination_branch == destination_branch]
         return paginate_with_meta(items, page, page_size)
 
-    async def list_by_user(self, user_name: str) -> List[ParcelPublic]:
-        lowered = user_name.lower()
+    async def list_by_user(self, user_name: str, user_last_name: str | None = None) -> List[ParcelPublic]:
+        full_name = f"{user_name} {user_last_name}".lower() if user_last_name else user_name.lower()
         items = await self._parcels.list()
         return [
             p for p in items
-            if (
-                p.sender.lower() in lowered
-                or lowered in p.sender.lower()
-                or p.recipient.lower() in lowered
-                or lowered in p.recipient.lower()
-            )
+            if full_name in p.sender.lower() or full_name in p.recipient.lower()
         ]
 
     async def get(self, parcel_id: str) -> ParcelPublic:

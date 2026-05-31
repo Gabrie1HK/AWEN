@@ -17,7 +17,7 @@ class UserManagementService:
         users = await self._repo.list()
         if search:
             lowered = search.lower()
-            users = [u for u in users if lowered in u.name.lower() or lowered in u.email.lower()]
+            users = [u for u in users if lowered in u.name.lower() or lowered in (u.last_name or '').lower() or lowered in (u.ci or '').lower() or lowered in u.email.lower() or lowered in (u.phone or '').lower()]
         if role:
             users = [u for u in users if u.role == role]
         return paginate_with_meta(users, page, page_size)
@@ -33,6 +33,8 @@ class UserManagementService:
         user = UserPublic(
             id=user_id,
             name=payload.name,
+            last_name=payload.last_name,
+            ci=payload.ci,
             email=payload.email,
             role=payload.role,
             branch=payload.branch,

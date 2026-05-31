@@ -55,9 +55,7 @@ class InMemoryBranchRepository(BranchRepository):
         existing = self._branches.get(branch_id)
         if not existing:
             return False
-        data = existing.model_dump()
-        data["active"] = False
-        self._branches[branch_id] = BranchPublic(**data)
+        del self._branches[branch_id]
         return True
 
 
@@ -130,6 +128,6 @@ class SqlAlchemyBranchRepository(BranchRepository):
         branch = await self._session.get(Branch, branch_id)
         if not branch:
             return False
-        branch.active = False
+        await self._session.delete(branch)
         await self._session.commit()
         return True

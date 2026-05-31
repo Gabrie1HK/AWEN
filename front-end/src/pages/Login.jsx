@@ -6,6 +6,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [forgotMsg, setForgotMsg] = useState('')
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -14,14 +15,10 @@ export default function Login() {
     setError('')
     try {
       const user = await login(email, password)
-      if (user) {
-        const route = user.role === 'Client' ? '/app/mis-encomiendas' : user.role === 'Driver' ? '/app/mis-entregas' : '/app/dashboard'
-        navigate(route)
-      } else {
-        setError('Credenciales inválidas. Prueba: admin@awen.com / 123456')
-      }
-    } catch {
-      setError('Error de conexión con el servidor')
+      const route = user.role === 'Client' ? '/app/mis-encomiendas' : user.role === 'Driver' ? '/app/mis-entregas' : '/app/dashboard'
+      navigate(route)
+    } catch (err) {
+      setError(err?.message || 'Error de conexión con el servidor')
     }
   }
 
@@ -63,15 +60,10 @@ export default function Login() {
           </div>
           {error && <p className="login-error">{error}</p>}
           <button type="submit" className="btn btn-primary login-btn">Iniciar Sesión</button>
-          <a href="#" className="login-forgot">¿Olvidaste tu contraseña?</a>
+          <a href="#" className="login-forgot" onClick={e => { e.preventDefault(); setForgotMsg('Póngase en contacto con soportetecnico@awen.com') }}>¿Olvidaste tu contraseña?</a>
+          {forgotMsg && <p className="login-forgot-msg">{forgotMsg}</p>}
         </form>
-        <div className="login-hint">
-          <p>Credenciales de prueba:</p>
-          <code>admin@awen.com / 123456</code>
-          <code>operador.carlos@awen.com / 123456</code>
-          <code>conductor.pedro@awen.com / 123456</code>
-          <code>juan@email.com / 123456</code>
-        </div>
+
       </div>
       </div>
     </div>

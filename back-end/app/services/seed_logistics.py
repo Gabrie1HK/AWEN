@@ -37,7 +37,7 @@ def seed_batches() -> list[BatchPublic]:
             vehicle="DEF-456",
             driver="Conductor Pedro",
             driverId=4,
-            parcelCount=3,
+            parcelCount=0,
         ),
     ]
 
