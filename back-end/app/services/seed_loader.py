@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import asyncio
+from app.database.database import AsyncSessionLocal
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -48,7 +51,7 @@ async def _seed_users(session: AsyncSession) -> None:
     existing = await session.execute(select(User.id))
     if existing.first():
         return
-    for item in seed_users():
+    for i, item in enumerate(seed_users()):
         session.add(
             User(
                 id=item.id,
@@ -62,6 +65,7 @@ async def _seed_users(session: AsyncSession) -> None:
                 address=item.address,
                 active=item.active,
                 hashed_password=item.hashed_password,
+                client_number=getattr(item, 'client_number', None) or (1000 + i)  # <--- FIX HERE
             )
         )
 
@@ -153,7 +157,7 @@ async def _seed_users_management(session: AsyncSession) -> None:
     existing = await session.execute(select(UserManagement.id))
     if existing.first():
         return
-    for item in seed_users_management():
+    for i, item in enumerate(seed_users_management()):
         session.add(
             UserManagement(
                 id=item.id,
@@ -168,6 +172,8 @@ async def _seed_users_management(session: AsyncSession) -> None:
                 active=item.active,
                 last_login=item.last_login,
                 hashed_password=get_password_hash("123456"),
+                # Add this line if UserManagement also throws a null constraint error:
+                # client_number=getattr(item, 'client_number', None) or (5000 + i)
             )
         )
 
@@ -352,3 +358,13 @@ async def _seed_notifications(session: AsyncSession) -> None:
     existing = await session.execute(select(Notification.id))
     if existing.first():
         return
+    
+
+async def run_seeding():
+    async with AsyncSessionLocal() as session:
+        print("Starting seeding process...")
+        await seed_all(session)
+        print("Seeding complete! Database is now populated.")
+
+if __name__ == "__main__":
+    asyncio.run(run_seeding())
