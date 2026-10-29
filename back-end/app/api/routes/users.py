@@ -10,7 +10,7 @@ from app.schemas.user import UserInDB
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("", response_model=PaginatedResponse[UserPublic], dependencies=[Depends(require_permission("GET", "/api/v1/users"))])
+@router.get("", response_model=PaginatedResponse[UserPublic], dependencies=[Depends(require_permission())])
 async def list_users(
     search: str | None = None,
     role: UserRole | None = Query(default=None),
@@ -23,7 +23,7 @@ async def list_users(
 
 @router.get("/me", response_model=UserPublic, summary="Mi perfil")
 async def get_my_profile(
-    user: UserInDB = Depends(require_permission("GET", "/api/v1/users/me")),
+    user: UserInDB = Depends(require_permission()),
     service: UserManagementService = Depends(get_user_management_service),
 ) -> UserPublic:
     return await service.get(user.id)
@@ -32,13 +32,13 @@ async def get_my_profile(
 @router.patch("/me", response_model=UserPublic, summary="Actualizar mi perfil")
 async def update_my_profile(
     payload: UserUpdate,
-    user: UserInDB = Depends(require_permission("PATCH", "/api/v1/users/me")),
+    user: UserInDB = Depends(require_permission()),
     service: UserManagementService = Depends(get_user_management_service),
 ) -> UserPublic:
     return await service.update(user.id, payload)
 
 
-@router.get("/{user_id}", response_model=UserPublic, dependencies=[Depends(require_permission("GET", "/api/v1/users/"))])
+@router.get("/{user_id}", response_model=UserPublic, dependencies=[Depends(require_permission())])
 async def get_user(
     user_id: int,
     service: UserManagementService = Depends(get_user_management_service),
@@ -46,7 +46,7 @@ async def get_user(
     return await service.get(user_id)
 
 
-@router.post("", response_model=UserPublic, dependencies=[Depends(require_permission("POST", "/api/v1/users"))])
+@router.post("", response_model=UserPublic, dependencies=[Depends(require_permission())])
 async def create_user(
     payload: UserCreate,
     service: UserManagementService = Depends(get_user_management_service),
@@ -54,7 +54,7 @@ async def create_user(
     return await service.create(payload)
 
 
-@router.patch("/{user_id}", response_model=UserPublic, dependencies=[Depends(require_permission("PATCH", "/api/v1/users/"))])
+@router.patch("/{user_id}", response_model=UserPublic, dependencies=[Depends(require_permission())])
 async def update_user(
     user_id: int,
     payload: UserUpdate,
@@ -63,7 +63,7 @@ async def update_user(
     return await service.update(user_id, payload)
 
 
-@router.delete("/{user_id}", dependencies=[Depends(require_permission("DELETE", "/api/v1/users/"))])
+@router.delete("/{user_id}", dependencies=[Depends(require_permission())])
 async def delete_user(
     user_id: int,
     service: UserManagementService = Depends(get_user_management_service),
@@ -72,7 +72,7 @@ async def delete_user(
     return {"status": "ok"}
 
 
-@router.patch("/{user_id}/password", summary="Cambiar clave de usuario (admin)", dependencies=[Depends(require_permission("PATCH", "/api/v1/users/password"))])
+@router.patch("/{user_id}/password", summary="Cambiar clave de usuario (admin)", dependencies=[Depends(require_permission())])
 async def reset_user_password(
     user_id: int,
     payload: UserPasswordReset,

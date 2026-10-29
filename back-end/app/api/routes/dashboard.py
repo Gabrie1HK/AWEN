@@ -8,7 +8,7 @@ from app.services.reports import ReportService
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
-@router.get("", response_model=DashboardResponse, summary="Dashboard con KPIS", dependencies=[Depends(require_permission("GET", "/api/v1/dashboard"))])
+@router.get("", response_model=DashboardResponse, summary="Dashboard con KPIS", dependencies=[Depends(require_permission())])
 async def dashboard(
     service: ReportService = Depends(get_report_service),
 ) -> DashboardResponse:

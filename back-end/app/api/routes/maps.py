@@ -8,7 +8,7 @@ from app.services.parcels import ParcelService
 router = APIRouter(prefix="/maps", tags=["maps"])
 
 
-@router.get("/route", response_model=RouteResponse, summary="Calcular ruta entre dos puntos por calles", dependencies=[Depends(require_permission("GET", "/api/v1/maps/route"))])
+@router.get("/route", response_model=RouteResponse, summary="Calcular ruta entre dos puntos por calles", dependencies=[Depends(require_permission())])
 async def get_route(
     origin_lat: float = Query(..., description="Latitud del origen"),
     origin_lng: float = Query(..., description="Longitud del origen"),

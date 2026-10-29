@@ -15,7 +15,7 @@ async def login(payload: LoginRequest, service: AuthService = Depends(get_auth_s
     return await service.authenticate(payload.email, payload.password)
 
 
-@router.get("/me", response_model=UserPublic, summary="Obtener usuario actual", dependencies=[Depends(require_permission("GET", "/api/v1/auth/me"))])
-async def me(current_user: UserInDB = Depends(require_permission("GET", "/api/v1/auth/me"))) -> UserPublic:
+@router.get("/me", response_model=UserPublic, summary="Obtener usuario actual", dependencies=[Depends(require_permission())])
+async def me(current_user: UserInDB = Depends(require_permission())) -> UserPublic:
     """Devuelve la informacion del usuario autenticado segun el token JWT."""
     return UserPublic(**current_user.model_dump(exclude={"hashed_password"}))

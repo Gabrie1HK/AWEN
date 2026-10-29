@@ -18,7 +18,7 @@ from app.schemas.user import UserInDB
 router = APIRouter(prefix="/parcels", tags=["parcels"])
 
 
-@router.get("", response_model=PaginatedResponse[ParcelPublic], summary="Listar encomiendas", dependencies=[Depends(require_permission("GET", "/api/v1/parcels"))])
+@router.get("", response_model=PaginatedResponse[ParcelPublic], summary="Listar encomiendas", dependencies=[Depends(require_permission())])
 async def list_parcels(
     search: str | None = None,
     status: ParcelStatus | None = None,
@@ -41,12 +41,12 @@ async def list_parcels(
 @router.get("/my-parcels", response_model=list[ParcelPublic], summary="Mis encomiendas (cliente)")
 async def my_parcels(
     service: ParcelService = Depends(get_parcel_service),
-    user: UserInDB = Depends(require_permission("GET", "/api/v1/parcels/my-parcels")),
+    user: UserInDB = Depends(require_permission()),
 ) -> list[ParcelPublic]:
     return await service.list_by_user(user.name, user.last_name)
 
 
-@router.get("/{parcel_id}", response_model=ParcelPublic, dependencies=[Depends(require_permission("GET", "/api/v1/parcels/"))])
+@router.get("/{parcel_id}", response_model=ParcelPublic, dependencies=[Depends(require_permission())])
 async def get_parcel(
     parcel_id: str,
     service: ParcelService = Depends(get_parcel_service),
@@ -54,7 +54,7 @@ async def get_parcel(
     return await service.get(parcel_id)
 
 
-@router.post("", response_model=ParcelPublic, summary="Crear encomienda", dependencies=[Depends(require_permission("POST", "/api/v1/parcels"))])
+@router.post("", response_model=ParcelPublic, summary="Crear encomienda", dependencies=[Depends(require_permission())])
 async def create_parcel(
     payload: ParcelCreate,
     service: ParcelService = Depends(get_parcel_service),
@@ -62,7 +62,7 @@ async def create_parcel(
     return await service.create(payload)
 
 
-@router.patch("/{parcel_id}", response_model=ParcelPublic, dependencies=[Depends(require_permission("PATCH", "/api/v1/parcels/"))])
+@router.patch("/{parcel_id}", response_model=ParcelPublic, dependencies=[Depends(require_permission())])
 async def update_parcel(
     parcel_id: str,
     payload: ParcelUpdate,
@@ -76,12 +76,12 @@ async def update_status(
     parcel_id: str,
     payload: ParcelStatusUpdate,
     service: ParcelService = Depends(get_parcel_service),
-    user: UserInDB = Depends(require_permission("POST", "/api/v1/parcels/status")),
+    user: UserInDB = Depends(require_permission()),
 ) -> ParcelPublic:
     return await service.update_status(parcel_id, payload, driver_name=user.name)
 
 
-@router.delete("/{parcel_id}", summary="Eliminar encomienda (admin)", dependencies=[Depends(require_permission("DELETE", "/api/v1/parcels/"))])
+@router.delete("/{parcel_id}", summary="Eliminar encomienda (admin)", dependencies=[Depends(require_permission())])
 async def delete_parcel(
     parcel_id: str,
     service: ParcelService = Depends(get_parcel_service),
@@ -90,7 +90,7 @@ async def delete_parcel(
     return {"status": "ok"}
 
 
-@router.post("/{parcel_id}/cancel", response_model=ParcelPublic, dependencies=[Depends(require_permission("POST", "/api/v1/parcels/cancel"))])
+@router.post("/{parcel_id}/cancel", response_model=ParcelPublic, dependencies=[Depends(require_permission())])
 async def cancel_parcel(
     parcel_id: str,
     service: ParcelService = Depends(get_parcel_service),
@@ -104,12 +104,12 @@ async def add_parcel_note(
     payload: ParcelNoteCreate,
     service: ParcelService = Depends(get_parcel_service),
     db: AsyncSession = Depends(get_db),
-    user: UserInDB = Depends(require_permission("POST", "/api/v1/parcels/notes")),
+    user: UserInDB = Depends(require_permission()),
 ) -> ParcelNotePublic:
     return await service.add_note(guide, payload.text, user.name, payload.is_public, db)
 
 
-@router.get("/{guide}/notes", response_model=list[ParcelNotePublic], dependencies=[Depends(require_permission("GET", "/api/v1/parcels/notes"))])
+@router.get("/{guide}/notes", response_model=list[ParcelNotePublic], dependencies=[Depends(require_permission())])
 async def get_parcel_notes(
     guide: str,
     service: ParcelService = Depends(get_parcel_service),
@@ -118,7 +118,7 @@ async def get_parcel_notes(
     return await service.get_notes(guide, db)
 
 
-@router.post("/upload-evidence", summary="Subir foto de evidencia (retorna URL)", dependencies=[Depends(require_permission("POST", "/api/v1/parcels/upload-evidence"))])
+@router.post("/upload-evidence", summary="Subir foto de evidencia (retorna URL)", dependencies=[Depends(require_permission())])
 async def upload_evidence(
     file: UploadFile = File(...),
 ) -> dict:
@@ -137,7 +137,7 @@ async def upload_evidence(
     return {"filename": filename, "url": relative_url, "size": len(content)}
 
 
-@router.get("/{guide}/tracking", response_model=list[TrackingEvent], dependencies=[Depends(require_permission("GET", "/api/v1/parcels/tracking"))])
+@router.get("/{guide}/tracking", response_model=list[TrackingEvent], dependencies=[Depends(require_permission())])
 async def parcel_tracking(
     guide: str,
     service: ParcelService = Depends(get_parcel_service),

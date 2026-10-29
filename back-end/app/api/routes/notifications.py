@@ -10,7 +10,7 @@ from app.services.notifications import NotificationService
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
-@router.get("", response_model=PaginatedResponse[NotificationSchema], dependencies=[Depends(require_permission("GET", "/api/v1/notifications"))])
+@router.get("", response_model=PaginatedResponse[NotificationSchema], dependencies=[Depends(require_permission())])
 async def list_notifications(
     service: NotificationService = Depends(get_notification_service),
 ) -> PaginatedResponse[NotificationSchema]:
@@ -18,7 +18,7 @@ async def list_notifications(
     return paginate_with_meta(items, page=None, page_size=None)
 
 
-@router.patch("/{notif_id}/read", dependencies=[Depends(require_permission("PATCH", "/api/v1/notifications/read"))])
+@router.patch("/{notif_id}/read", dependencies=[Depends(require_permission())])
 async def mark_read(
     notif_id: str,
     service: NotificationService = Depends(get_notification_service),
@@ -27,7 +27,7 @@ async def mark_read(
     return {"ok": True}
 
 
-@router.patch("/read-all", dependencies=[Depends(require_permission("PATCH", "/api/v1/notifications/read-all"))])
+@router.patch("/read-all", dependencies=[Depends(require_permission())])
 async def mark_all_read(
     service: NotificationService = Depends(get_notification_service),
 ) -> dict:

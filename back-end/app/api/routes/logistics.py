@@ -16,7 +16,7 @@ from app.services.logistics import LogisticsService
 router = APIRouter(prefix="/logistics", tags=["logistics"])
 
 
-@router.get("/batches", response_model=PaginatedResponse[BatchPublic], summary="Listar lotes", dependencies=[Depends(require_permission("GET", "/api/v1/logistics/batches"))])
+@router.get("/batches", response_model=PaginatedResponse[BatchPublic], summary="Listar lotes", dependencies=[Depends(require_permission())])
 async def list_batches(
     page: int | None = Query(default=None, ge=1),
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
@@ -25,7 +25,7 @@ async def list_batches(
     return await service.list_batches(page=page, page_size=page_size)
 
 
-@router.get("/batches/{batch_id}", response_model=BatchPublic, dependencies=[Depends(require_permission("GET", "/api/v1/logistics/batches/"))])
+@router.get("/batches/{batch_id}", response_model=BatchPublic, dependencies=[Depends(require_permission())])
 async def get_batch(
     batch_id: str,
     service: LogisticsService = Depends(get_logistics_service),
@@ -33,7 +33,7 @@ async def get_batch(
     return await service.get_batch(batch_id)
 
 
-@router.post("/batches", response_model=BatchPublic, dependencies=[Depends(require_permission("POST", "/api/v1/logistics/batches"))])
+@router.post("/batches", response_model=BatchPublic, dependencies=[Depends(require_permission())])
 async def create_batch(
     payload: BatchCreate,
     service: LogisticsService = Depends(get_logistics_service),
@@ -41,7 +41,7 @@ async def create_batch(
     return await service.create_batch(payload)
 
 
-@router.patch("/batches/{batch_id}", response_model=BatchPublic, dependencies=[Depends(require_permission("PATCH", "/api/v1/logistics/batches/"))])
+@router.patch("/batches/{batch_id}", response_model=BatchPublic, dependencies=[Depends(require_permission())])
 async def update_batch(
     batch_id: str,
     payload: BatchUpdate,
@@ -50,7 +50,7 @@ async def update_batch(
     return await service.update_batch(batch_id, payload)
 
 
-@router.post("/batches/{batch_id}/assign", response_model=BatchPublic, summary="Asignar lote a vehiculo", dependencies=[Depends(require_permission("POST", "/api/v1/logistics/batches/assign"))])
+@router.post("/batches/{batch_id}/assign", response_model=BatchPublic, summary="Asignar lote a vehiculo", dependencies=[Depends(require_permission())])
 async def assign_batch(
     batch_id: str,
     payload: BatchAssign,
@@ -59,7 +59,7 @@ async def assign_batch(
     return await service.assign_batch(batch_id, payload)
 
 
-@router.get("/vehicles", response_model=PaginatedResponse[VehiclePublic], dependencies=[Depends(require_permission("GET", "/api/v1/logistics/vehicles"))])
+@router.get("/vehicles", response_model=PaginatedResponse[VehiclePublic], dependencies=[Depends(require_permission())])
 async def list_vehicles(
     page: int | None = Query(default=None, ge=1),
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
@@ -68,7 +68,7 @@ async def list_vehicles(
     return await service.list_vehicles(page=page, page_size=page_size)
 
 
-@router.post("/vehicles", response_model=VehiclePublic, dependencies=[Depends(require_permission("POST", "/api/v1/logistics/vehicles"))])
+@router.post("/vehicles", response_model=VehiclePublic, dependencies=[Depends(require_permission())])
 async def create_vehicle(
     payload: VehicleCreate,
     service: LogisticsService = Depends(get_logistics_service),

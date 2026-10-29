@@ -14,7 +14,7 @@ from app.services.deliveries import DeliveryService
 router = APIRouter(prefix="/deliveries", tags=["deliveries"])
 
 
-@router.get("", response_model=PaginatedResponse[DeliveryPublic], dependencies=[Depends(require_permission("GET", "/api/v1/deliveries"))])
+@router.get("", response_model=PaginatedResponse[DeliveryPublic], dependencies=[Depends(require_permission())])
 async def list_deliveries(
     page: int | None = Query(default=None, ge=1),
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
@@ -23,7 +23,7 @@ async def list_deliveries(
     return await service.list(page=page, page_size=page_size)
 
 
-@router.get("/{delivery_id}", response_model=DeliveryPublic, dependencies=[Depends(require_permission("GET", "/api/v1/deliveries/"))])
+@router.get("/{delivery_id}", response_model=DeliveryPublic, dependencies=[Depends(require_permission())])
 async def get_delivery(
     delivery_id: str,
     service: DeliveryService = Depends(get_delivery_service),
@@ -31,7 +31,7 @@ async def get_delivery(
     return await service.get(delivery_id)
 
 
-@router.patch("/{delivery_id}", response_model=DeliveryPublic, dependencies=[Depends(require_permission("PATCH", "/api/v1/deliveries/"))])
+@router.patch("/{delivery_id}", response_model=DeliveryPublic, dependencies=[Depends(require_permission())])
 async def update_delivery(
     delivery_id: str,
     payload: DeliveryUpdate,
@@ -40,7 +40,7 @@ async def update_delivery(
     return await service.update(delivery_id, payload)
 
 
-@router.post("/{delivery_id}/pod", response_model=DeliveryPublic, summary="Registrar comprobante de entrega", dependencies=[Depends(require_permission("POST", "/api/v1/deliveries/pod"))])
+@router.post("/{delivery_id}/pod", response_model=DeliveryPublic, summary="Registrar comprobante de entrega", dependencies=[Depends(require_permission())])
 async def add_pod(
     delivery_id: str,
     payload: DeliveryPOD,
@@ -49,7 +49,7 @@ async def add_pod(
     return await service.add_pod(delivery_id, payload)
 
 
-@router.post("/{delivery_id}/upload", summary="Subir archivo de evidencia (foto/firma)", dependencies=[Depends(require_permission("POST", "/api/v1/deliveries/upload"))])
+@router.post("/{delivery_id}/upload", summary="Subir archivo de evidencia (foto/firma)", dependencies=[Depends(require_permission())])
 async def upload_evidence(
     delivery_id: str,
     file: UploadFile = File(...),
