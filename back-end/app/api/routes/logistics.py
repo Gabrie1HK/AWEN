@@ -11,26 +11,29 @@ from app.schemas.logistics import (
 )
 from app.schemas.pagination import PaginatedResponse
 from app.services.logistics import LogisticsService
+from app.schemas.user import UserInDB
 
 
 router = APIRouter(prefix="/logistics", tags=["logistics"])
 
 
-@router.get("/batches", response_model=PaginatedResponse[BatchPublic], summary="Listar lotes", dependencies=[Depends(require_permission())])
+@router.get("/batches", response_model=PaginatedResponse[BatchPublic], summary="Listar lotes")
 async def list_batches(
     page: int | None = Query(default=None, ge=1),
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
     service: LogisticsService = Depends(get_logistics_service),
+    user: UserInDB = Depends(require_permission()),
 ) -> dict:
-    return await service.list_batches(page=page, page_size=page_size)
+    return await service.list_batches(page=page, page_size=page_size, user_branch=user.branch, user_role=user.role)
 
 
-@router.get("/batches/{batch_id}", response_model=BatchPublic, dependencies=[Depends(require_permission())])
+@router.get("/batches/{batch_id}", response_model=BatchPublic)
 async def get_batch(
     batch_id: str,
     service: LogisticsService = Depends(get_logistics_service),
+    user: UserInDB = Depends(require_permission()),
 ) -> BatchPublic:
-    return await service.get_batch(batch_id)
+    return await service.get_batch(batch_id, user_branch=user.branch, user_role=user.role)
 
 
 @router.post("/batches", response_model=BatchPublic, dependencies=[Depends(require_permission())])
@@ -59,13 +62,14 @@ async def assign_batch(
     return await service.assign_batch(batch_id, payload)
 
 
-@router.get("/vehicles", response_model=PaginatedResponse[VehiclePublic], dependencies=[Depends(require_permission())])
+@router.get("/vehicles", response_model=PaginatedResponse[VehiclePublic])
 async def list_vehicles(
     page: int | None = Query(default=None, ge=1),
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
     service: LogisticsService = Depends(get_logistics_service),
+    user: UserInDB = Depends(require_permission()),
 ) -> dict:
-    return await service.list_vehicles(page=page, page_size=page_size)
+    return await service.list_vehicles(page=page, page_size=page_size, user_branch=user.branch, user_role=user.role)
 
 
 @router.post("/vehicles", response_model=VehiclePublic, dependencies=[Depends(require_permission())])

@@ -10,15 +10,23 @@ from app.schemas.user import UserInDB
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("", response_model=PaginatedResponse[UserPublic], dependencies=[Depends(require_permission())])
+@router.get("", response_model=PaginatedResponse[UserPublic])
 async def list_users(
     search: str | None = None,
     role: UserRole | None = Query(default=None),
     page: int | None = Query(default=None, ge=1),
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
     service: UserManagementService = Depends(get_user_management_service),
+    user: UserInDB = Depends(require_permission()),
 ) -> dict:
-    return await service.list(search=search, role=role, page=page, page_size=page_size)
+    return await service.list(
+        search=search,
+        role=role,
+        page=page,
+        page_size=page_size,
+        user_branch=user.branch,
+        user_role=user.role,
+    )
 
 
 @router.get("/me", response_model=UserPublic, summary="Mi perfil")
@@ -38,12 +46,13 @@ async def update_my_profile(
     return await service.update(user.id, payload)
 
 
-@router.get("/{user_id}", response_model=UserPublic, dependencies=[Depends(require_permission())])
+@router.get("/{user_id}", response_model=UserPublic)
 async def get_user(
     user_id: int,
     service: UserManagementService = Depends(get_user_management_service),
+    user: UserInDB = Depends(require_permission()),
 ) -> UserPublic:
-    return await service.get(user_id)
+    return await service.get(user_id, user_branch=user.branch, user_role=user.role)
 
 
 @router.post("", response_model=UserPublic, dependencies=[Depends(require_permission())])

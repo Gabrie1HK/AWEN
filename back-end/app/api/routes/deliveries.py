@@ -11,26 +11,34 @@ from app.schemas.delivery import DeliveryPOD, DeliveryPublic, DeliveryUpdate
 from app.schemas.pagination import PaginatedResponse
 from app.services.deliveries import DeliveryService
 from app.services.storage import StorageService
+from app.schemas.user import UserInDB
 
 
 router = APIRouter(prefix="/deliveries", tags=["deliveries"])
 
 
-@router.get("", response_model=PaginatedResponse[DeliveryPublic], dependencies=[Depends(require_permission())])
+@router.get("", response_model=PaginatedResponse[DeliveryPublic])
 async def list_deliveries(
     page: int | None = Query(default=None, ge=1),
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
     service: DeliveryService = Depends(get_delivery_service),
+    user: UserInDB = Depends(require_permission()),
 ) -> dict:
-    return await service.list(page=page, page_size=page_size)
+    return await service.list(
+        page=page,
+        page_size=page_size,
+        user_branch=user.branch,
+        user_role=user.role,
+    )
 
 
-@router.get("/{delivery_id}", response_model=DeliveryPublic, dependencies=[Depends(require_permission())])
+@router.get("/{delivery_id}", response_model=DeliveryPublic)
 async def get_delivery(
     delivery_id: str,
     service: DeliveryService = Depends(get_delivery_service),
+    user: UserInDB = Depends(require_permission()),
 ) -> DeliveryPublic:
-    return await service.get(delivery_id)
+    return await service.get(delivery_id, user_branch=user.branch, user_role=user.role)
 
 
 @router.patch("/{delivery_id}", response_model=DeliveryPublic, dependencies=[Depends(require_permission())])

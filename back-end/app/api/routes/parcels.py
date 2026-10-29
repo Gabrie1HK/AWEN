@@ -20,7 +20,7 @@ from app.schemas.user import UserInDB
 router = APIRouter(prefix="/parcels", tags=["parcels"])
 
 
-@router.get("", response_model=PaginatedResponse[ParcelPublic], summary="Listar encomiendas", dependencies=[Depends(require_permission())])
+@router.get("", response_model=PaginatedResponse[ParcelPublic], summary="Listar encomiendas")
 async def list_parcels(
     search: str | None = None,
     status: ParcelStatus | None = None,
@@ -29,6 +29,7 @@ async def list_parcels(
     page: int | None = Query(default=None, ge=1),
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
     service: ParcelService = Depends(get_parcel_service),
+    user: UserInDB = Depends(require_permission()),
 ) -> dict:
     return await service.list(
         search=search,
@@ -37,6 +38,8 @@ async def list_parcels(
         destination_branch=destination_branch,
         page=page,
         page_size=page_size,
+        user_branch=user.branch,
+        user_role=user.role,
     )
 
 
@@ -48,12 +51,14 @@ async def my_parcels(
     return await service.list_by_user(user.name, user.last_name)
 
 
-@router.get("/{parcel_id}", response_model=ParcelPublic, dependencies=[Depends(require_permission())])
+@router.get("/{parcel_id}", response_model=ParcelPublic)
 async def get_parcel(
     parcel_id: str,
     service: ParcelService = Depends(get_parcel_service),
+    user: UserInDB = Depends(require_permission()),
 ) -> ParcelPublic:
-    return await service.get(parcel_id)
+    parcel = await service.get(parcel_id, user_branch=user.branch, user_role=user.role)
+    return parcel
 
 
 @router.post("", response_model=ParcelPublic, summary="Crear encomienda", dependencies=[Depends(require_permission())])
