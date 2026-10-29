@@ -5,20 +5,20 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-
-from app.core.dependencies import get_current_user, get_parcel_service
+from app.core.dependencies import get_parcel_service, require_permission
 from app.database.database import get_db
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.parcel import ParcelCreate, ParcelPublic, ParcelStatus, ParcelStatusUpdate, ParcelUpdate
 from app.schemas.parcel_note import ParcelNoteCreate, ParcelNotePublic
 from app.schemas.tracking import TrackingEvent
 from app.services.parcels import ParcelService
+from app.schemas.user import UserInDB
 
 
 router = APIRouter(prefix="/parcels", tags=["parcels"])
 
 
-@router.get("", response_model=PaginatedResponse[ParcelPublic], summary="Listar encomiendas")
+@router.get("", response_model=PaginatedResponse[ParcelPublic], summary="Listar encomiendas", dependencies=[Depends(require_permission())])
 async def list_parcels(
     search: str | None = None,
     status: ParcelStatus | None = None,
@@ -27,7 +27,6 @@ async def list_parcels(
     page: int | None = Query(default=None, ge=1),
     page_size: int | None = Query(default=None, ge=1, le=200, alias="pageSize"),
     service: ParcelService = Depends(get_parcel_service),
-    _user=Depends(get_current_user),
 ) -> dict:
     return await service.list(
         search=search,
@@ -42,35 +41,32 @@ async def list_parcels(
 @router.get("/my-parcels", response_model=list[ParcelPublic], summary="Mis encomiendas (cliente)")
 async def my_parcels(
     service: ParcelService = Depends(get_parcel_service),
-    user=Depends(get_current_user),
+    user: UserInDB = Depends(require_permission()),
 ) -> list[ParcelPublic]:
     return await service.list_by_user(user.name, user.last_name)
 
 
-@router.get("/{parcel_id}", response_model=ParcelPublic)
+@router.get("/{parcel_id}", response_model=ParcelPublic, dependencies=[Depends(require_permission())])
 async def get_parcel(
     parcel_id: str,
     service: ParcelService = Depends(get_parcel_service),
-    _user=Depends(get_current_user),
 ) -> ParcelPublic:
     return await service.get(parcel_id)
 
 
-@router.post("", response_model=ParcelPublic, summary="Crear encomienda")
+@router.post("", response_model=ParcelPublic, summary="Crear encomienda", dependencies=[Depends(require_permission())])
 async def create_parcel(
     payload: ParcelCreate,
     service: ParcelService = Depends(get_parcel_service),
-    _user=Depends(get_current_user),
 ) -> ParcelPublic:
     return await service.create(payload)
 
 
-@router.patch("/{parcel_id}", response_model=ParcelPublic)
+@router.patch("/{parcel_id}", response_model=ParcelPublic, dependencies=[Depends(require_permission())])
 async def update_parcel(
     parcel_id: str,
     payload: ParcelUpdate,
     service: ParcelService = Depends(get_parcel_service),
-    _user=Depends(get_current_user),
 ) -> ParcelPublic:
     return await service.update(parcel_id, payload)
 
@@ -80,26 +76,24 @@ async def update_status(
     parcel_id: str,
     payload: ParcelStatusUpdate,
     service: ParcelService = Depends(get_parcel_service),
-    user=Depends(get_current_user),
+    user: UserInDB = Depends(require_permission()),
 ) -> ParcelPublic:
     return await service.update_status(parcel_id, payload, driver_name=user.name)
 
 
-@router.delete("/{parcel_id}", summary="Eliminar encomienda (admin)")
+@router.delete("/{parcel_id}", summary="Eliminar encomienda (admin)", dependencies=[Depends(require_permission())])
 async def delete_parcel(
     parcel_id: str,
     service: ParcelService = Depends(get_parcel_service),
-    _user=Depends(get_current_user),
 ) -> dict:
     await service.delete_parcel(parcel_id)
     return {"status": "ok"}
 
 
-@router.post("/{parcel_id}/cancel", response_model=ParcelPublic)
+@router.post("/{parcel_id}/cancel", response_model=ParcelPublic, dependencies=[Depends(require_permission())])
 async def cancel_parcel(
     parcel_id: str,
     service: ParcelService = Depends(get_parcel_service),
-    _user=Depends(get_current_user),
 ) -> ParcelPublic:
     return await service.cancel(parcel_id)
 
@@ -110,25 +104,23 @@ async def add_parcel_note(
     payload: ParcelNoteCreate,
     service: ParcelService = Depends(get_parcel_service),
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_user),
+    user: UserInDB = Depends(require_permission()),
 ) -> ParcelNotePublic:
     return await service.add_note(guide, payload.text, user.name, payload.is_public, db)
 
 
-@router.get("/{guide}/notes", response_model=list[ParcelNotePublic])
+@router.get("/{guide}/notes", response_model=list[ParcelNotePublic], dependencies=[Depends(require_permission())])
 async def get_parcel_notes(
     guide: str,
     service: ParcelService = Depends(get_parcel_service),
     db: AsyncSession = Depends(get_db),
-    _user=Depends(get_current_user),
 ) -> list[ParcelNotePublic]:
     return await service.get_notes(guide, db)
 
 
-@router.post("/upload-evidence", summary="Subir foto de evidencia (retorna URL)")
+@router.post("/upload-evidence", summary="Subir foto de evidencia (retorna URL)", dependencies=[Depends(require_permission())])
 async def upload_evidence(
     file: UploadFile = File(...),
-    _user=Depends(get_current_user),
 ) -> dict:
     settings = get_settings()
     upload_dir = Path(settings.upload_dir)
@@ -145,11 +137,10 @@ async def upload_evidence(
     return {"filename": filename, "url": relative_url, "size": len(content)}
 
 
-@router.get("/{guide}/tracking", response_model=list[TrackingEvent])
+@router.get("/{guide}/tracking", response_model=list[TrackingEvent], dependencies=[Depends(require_permission())])
 async def parcel_tracking(
     guide: str,
     service: ParcelService = Depends(get_parcel_service),
-    _user=Depends(get_current_user),
 ) -> list[TrackingEvent]:
     events, _route = await service.tracking(guide)
     if not events:

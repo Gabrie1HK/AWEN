@@ -43,6 +43,16 @@ class AppSettings(BaseSettings):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
 
+    @field_validator("secret_key", mode="after")
+    @classmethod
+    def validate_secret_key(cls, v: str) -> str:
+        if v == "CHANGE_ME":
+            raise ValueError(
+                "AWEN_SECRET_KEY no puede ser el valor por defecto 'CHANGE_ME'. "
+                "Configure una clave secreta segura en la variable de entorno AWEN_SECRET_KEY."
+            )
+        return v
+
 
 @lru_cache
 def get_settings() -> AppSettings:
