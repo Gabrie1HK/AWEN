@@ -1,14 +1,16 @@
+import io
 import os
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile, HTTPException
 
 from app.core.config import get_settings
-from app.core.dependencies import get_delivery_service, require_permission
+from app.core.dependencies import get_delivery_service, get_storage_service, require_permission
 from app.schemas.delivery import DeliveryPOD, DeliveryPublic, DeliveryUpdate
 from app.schemas.pagination import PaginatedResponse
 from app.services.deliveries import DeliveryService
+from app.services.storage import StorageService
 
 
 router = APIRouter(prefix="/deliveries", tags=["deliveries"])
@@ -54,21 +56,22 @@ async def upload_evidence(
     delivery_id: str,
     file: UploadFile = File(...),
     service: DeliveryService = Depends(get_delivery_service),
+    storage: StorageService = Depends(get_storage_service),
 ) -> dict:
-    settings = get_settings()
-    upload_dir = Path(settings.upload_dir)
-    upload_dir.mkdir(parents=True, exist_ok=True)
+    content = await file.read()
+    file.filename = file.filename or "upload.bin"
 
-    ext = Path(file.filename).suffix if file.filename else ".bin"
-    filename = f"{delivery_id}_{uuid.uuid4().hex}{ext}"
-    filepath = upload_dir / filename
+    try:
+        result = storage.upload_file(
+            content=content,
+            file_type="deliveries",
+            original_filename=file.filename,
+            content_type=file.content_type or "application/octet-stream",
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    content = file.file.read()
-    filepath.write_bytes(content)
+    # Actualizar delivery con la URL firmada
+    await service.update(delivery_id, DeliveryUpdate(photoUrl=result["url"]))
 
-    relative_url = f"/uploads/{filename}"
-    await service.update(
-        delivery_id,
-        DeliveryUpdate(photoUrl=relative_url),
-    )
-    return {"filename": filename, "url": relative_url, "size": len(content)}
+    return result

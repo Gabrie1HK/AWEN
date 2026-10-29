@@ -1,17 +1,19 @@
+import io
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.dependencies import get_parcel_service, require_permission
+from app.core.dependencies import get_parcel_service, get_storage_service, require_permission
 from app.database.database import get_db
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.parcel import ParcelCreate, ParcelPublic, ParcelStatus, ParcelStatusUpdate, ParcelUpdate
 from app.schemas.parcel_note import ParcelNoteCreate, ParcelNotePublic
 from app.schemas.tracking import TrackingEvent
 from app.services.parcels import ParcelService
+from app.services.storage import StorageService
 from app.schemas.user import UserInDB
 
 
@@ -121,20 +123,22 @@ async def get_parcel_notes(
 @router.post("/upload-evidence", summary="Subir foto de evidencia (retorna URL)", dependencies=[Depends(require_permission())])
 async def upload_evidence(
     file: UploadFile = File(...),
+    storage: StorageService = Depends(get_storage_service),
 ) -> dict:
-    settings = get_settings()
-    upload_dir = Path(settings.upload_dir)
-    upload_dir.mkdir(parents=True, exist_ok=True)
-
-    ext = Path(file.filename).suffix if file.filename else ".bin"
-    filename = f"ev_{uuid.uuid4().hex}{ext}"
-    filepath = upload_dir / filename
-
     content = await file.read()
-    filepath.write_bytes(content)
+    file.filename = file.filename or "upload.bin"
 
-    relative_url = f"/uploads/{filename}"
-    return {"filename": filename, "url": relative_url, "size": len(content)}
+    try:
+        result = storage.upload_file(
+            content=content,
+            file_type="parcels",
+            original_filename=file.filename,
+            content_type=file.content_type or "application/octet-stream",
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return result
 
 
 @router.get("/{guide}/tracking", response_model=list[TrackingEvent], dependencies=[Depends(require_permission())])
