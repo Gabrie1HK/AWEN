@@ -2,8 +2,7 @@
 
 Aplicación de gestión de encomiendas. Backend FastAPI + PostgreSQL, frontend React + Vite.
 
-Este proyecto se trabaja con **Spec-Driven Development (SDD)**: ningún cambio de comportamiento
-se implementa sin una especificación aprobada.
+
 
 ## Empezar
 
