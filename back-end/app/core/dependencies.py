@@ -79,7 +79,11 @@ def get_delivery_service(
     db: AsyncSession = Depends(get_db),
     notifications: NotificationService = Depends(get_notification_service),
 ) -> DeliveryService:
-    return DeliveryService(SqlAlchemyDeliveryRepository(db), notifications)
+    return DeliveryService(
+        SqlAlchemyDeliveryRepository(db),
+        SqlAlchemyUserRepository(db),
+        notifications,
+    )
 
 
 def get_storage_service() -> StorageService:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from app.core.errors import NotFoundError
 from app.core.pagination import paginate_with_meta
@@ -13,8 +13,19 @@ class UserManagementService:
     def __init__(self, repo: UserManagementRepository) -> None:
         self._repo = repo
 
-    async def list(self, search: str | None = None, role: UserRole | None = None, page: int | None = None, page_size: int | None = None) -> Dict[str, Any]:
+    async def list(
+        self,
+        search: str | None = None,
+        role: UserRole | None = None,
+        page: int | None = None,
+        page_size: int | None = None,
+        user_branch: Optional[str] = None,
+        user_role: Optional[str] = None,
+    ) -> Dict[str, Any]:
         users = await self._repo.list()
+        # Filtrado por branch del usuario (branch scoping - Fase 3)
+        if user_branch and user_role != "Admin":
+            users = [u for u in users if u.branch == user_branch]
         if search:
             lowered = search.lower()
             users = [u for u in users if lowered in u.name.lower() or lowered in (u.last_name or '').lower() or lowered in (u.ci or '').lower() or lowered in u.email.lower() or lowered in (u.phone or '').lower()]
@@ -22,10 +33,14 @@ class UserManagementService:
             users = [u for u in users if u.role == role]
         return paginate_with_meta(users, page, page_size)
 
-    async def get(self, user_id: int) -> UserPublic:
+    async def get(self, user_id: int, user_branch: Optional[str] = None, user_role: Optional[str] = None) -> UserPublic:
         user = await self._repo.get(user_id)
         if not user:
             raise NotFoundError("Usuario no encontrado")
+        # Branch scoping: verificar ownership para roles no-Admin
+        if user_branch and user_role != "Admin":
+            if user.branch != user_branch:
+                raise NotFoundError("Usuario no encontrado")
         return user
 
     async def create(self, payload: UserCreate) -> UserPublic:

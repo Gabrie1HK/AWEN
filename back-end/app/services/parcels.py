@@ -44,8 +44,16 @@ class ParcelService:
         destination_branch: Optional[str] = None,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
+        user_branch: Optional[str] = None,
+        user_role: Optional[str] = None,
     ) -> Dict[str, Any]:
         items = await self._parcels.list()
+        # Filtrado por branch del usuario (branch scoping - Fase 3)
+        if user_branch and user_role != "Admin":
+            items = [
+                p for p in items
+                if p.origin_branch == user_branch or p.destination_branch == user_branch
+            ]
         if search:
             lowered = search.lower()
             items = [
@@ -70,10 +78,14 @@ class ParcelService:
             if full_name in p.sender.lower() or full_name in p.recipient.lower()
         ]
 
-    async def get(self, parcel_id: str) -> ParcelPublic:
+    async def get(self, parcel_id: str, user_branch: Optional[str] = None, user_role: Optional[str] = None) -> ParcelPublic:
         parcel = await self._parcels.get(parcel_id)
         if not parcel:
             raise NotFoundError("Encomienda no encontrada")
+        # Branch scoping: verificar ownership para roles no-Admin
+        if user_branch and user_role != "Admin":
+            if parcel.origin_branch != user_branch and parcel.destination_branch != user_branch:
+                raise NotFoundError("Encomienda no encontrada")
         return parcel
 
     async def get_by_guide(self, guide: str) -> ParcelPublic:
