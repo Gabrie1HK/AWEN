@@ -125,29 +125,20 @@ async def upload_evidence(
     file: UploadFile = File(...),
     storage: StorageService = Depends(get_storage_service),
 ) -> dict:
-    # Validar archivo
     content = await file.read()
     file.filename = file.filename or "upload.bin"
 
     try:
-        storage.validate_file(io.BytesIO(content), file.content_type or "application/octet-stream", file.filename)
+        result = storage.upload_file(
+            content=content,
+            file_type="parcels",
+            original_filename=file.filename,
+            content_type=file.content_type or "application/octet-stream",
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Generar key única
-    key = storage._generate_key("parcels", file.filename)
-
-    # Subir a storage (streaming para archivos pequeños, direct upload para grandes)
-    if len(content) <= 5 * 1024 * 1024:  # 5MB threshold
-        storage.upload_bytes(content, key, file.content_type or "application/octet-stream")
-    else:
-        # Para archivos grandes, usar upload_fileobj
-        storage.upload_fileobj(io.BytesIO(content), key, file.content_type or "application/octet-stream")
-
-    # Generar pre-signed GET URL para descarga
-    download_url = storage.generate_presigned_get_url(key)
-
-    return {"filename": file.filename, "url": download_url, "size": len(content)}
+    return result
 
 
 @router.get("/{guide}/tracking", response_model=list[TrackingEvent], dependencies=[Depends(require_permission())])

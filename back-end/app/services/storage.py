@@ -95,6 +95,49 @@ class StorageService:
             ext = ".bin"
         return f"evidence/{file_type}/{uuid.uuid4().hex}{ext}"
 
+    # Threshold para decidir entre upload directo vs streaming (configurable vía env en el futuro)
+    _STREAMING_THRESHOLD = 5 * 1024 * 1024  # 5MB
+
+    def upload_file(
+        self,
+        content: bytes,
+        file_type: str,
+        original_filename: str,
+        content_type: str,
+    ) -> dict:
+        """
+        Sube archivo completo: valida, sube, retorna info con URL firmada.
+
+        Args:
+            content: Contenido del archivo en bytes
+            file_type: Tipo de archivo para key (parcels, deliveries)
+            original_filename: Nombre original del archivo
+            content_type: MIME type
+
+        Returns:
+            Dict con filename, url (pre-signed GET), size
+        """
+        # Validar
+        self.validate_file(io.BytesIO(content), content_type, original_filename)
+
+        # Generar key única
+        key = self._generate_key(file_type, original_filename)
+
+        # Subir: usa threshold para decidir método
+        if len(content) <= self._STREAMING_THRESHOLD:
+            self.upload_bytes(content, key, content_type)
+        else:
+            self.upload_fileobj(io.BytesIO(content), key, content_type)
+
+        # Generar pre-signed GET URL para descarga
+        download_url = self.generate_presigned_get_url(key)
+
+        return {
+            "filename": original_filename,
+            "url": download_url,
+            "size": len(content),
+        }
+
     def generate_presigned_put_url(
         self,
         key: str,

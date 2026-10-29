@@ -58,28 +58,20 @@ async def upload_evidence(
     service: DeliveryService = Depends(get_delivery_service),
     storage: StorageService = Depends(get_storage_service),
 ) -> dict:
-    # Validar archivo
     content = await file.read()
     file.filename = file.filename or "upload.bin"
 
     try:
-        storage.validate_file(io.BytesIO(content), file.content_type or "application/octet-stream", file.filename)
+        result = storage.upload_file(
+            content=content,
+            file_type="deliveries",
+            original_filename=file.filename,
+            content_type=file.content_type or "application/octet-stream",
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Generar key única
-    key = storage._generate_key("deliveries", file.filename)
-
-    # Subir a storage
-    if len(content) <= 5 * 1024 * 1024:  # 5MB threshold
-        storage.upload_bytes(content, key, file.content_type or "application/octet-stream")
-    else:
-        storage.upload_fileobj(io.BytesIO(content), key, file.content_type or "application/octet-stream")
-
-    # Generar pre-signed GET URL para descarga
-    download_url = storage.generate_presigned_get_url(key)
-
     # Actualizar delivery con la URL firmada
-    await service.update(delivery_id, DeliveryUpdate(photoUrl=download_url))
+    await service.update(delivery_id, DeliveryUpdate(photoUrl=result["url"]))
 
-    return {"filename": file.filename, "url": download_url, "size": len(content)}
+    return result
