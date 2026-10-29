@@ -1,3 +1,4 @@
+import json
 from functools import lru_cache
 from typing import List
 
@@ -28,7 +29,35 @@ class AppSettings(BaseSettings):
     upload_dir: str = "uploads"
     rate_limit_max: int = 100
     rate_limit_window: int = 60
+
+    # Storage (Vercel Blob / S3-compatible)
+    storage_provider: str = "vercel-blob"
+    blob_read_write_token: str = ""
+    storage_bucket: str = "awen-uploads"
+    storage_region: str = "auto"
+    storage_access_key: str = ""
+    storage_secret_key: str = ""
+    storage_endpoint_url: str = ""
+    storage_presigned_ttl: int = 3600
+    upload_max_size: int = 10485760  # 10MB
+    upload_allowed_types: List[str] = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf",
+    ]
+
     database_url: str = "postgresql+psycopg://postgres:CHANGE_ME@localhost:5432/awen_db"
+
+    @field_validator("upload_allowed_types", mode="before")
+    @classmethod
+    def parse_upload_allowed_types(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return [t.strip() for t in v.split(",") if t.strip()]
+        return v
     nominatim_url: str = "https://nominatim.openstreetmap.org/search"
     nominatim_reverse_url: str = "https://nominatim.openstreetmap.org/reverse"
     nominatim_user_agent: str = "AWEN-Tracking"

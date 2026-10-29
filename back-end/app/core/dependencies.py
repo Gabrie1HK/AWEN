@@ -22,6 +22,7 @@ from app.services.parcels import ParcelService
 from app.services.reports import ReportService
 from app.services.branches import BranchService
 from app.services.users_management import UserManagementService
+from app.services.storage import StorageService
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -79,6 +80,10 @@ def get_delivery_service(
     notifications: NotificationService = Depends(get_notification_service),
 ) -> DeliveryService:
     return DeliveryService(SqlAlchemyDeliveryRepository(db), notifications)
+
+
+def get_storage_service() -> StorageService:
+    return StorageService()
 
 
 async def get_current_user(
