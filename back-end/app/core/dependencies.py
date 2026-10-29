@@ -84,3 +84,45 @@ async def get_current_user(
     service: AuthService = Depends(get_auth_service),
 ) -> UserInDB:
     return await service.get_current_user(token)
+
+
+def require_permission(method: str = None, path: str = None):
+    """
+    Dependencia de FastAPI para autorización por rol (RBAC).
+
+    Uso como dependency (no retorna usuario al endpoint):
+        @router.get("/endpoint", dependencies=[Depends(require_permission("GET", "/api/v1/endpoint"))])
+        async def endpoint(...):
+            ...
+
+    Uso como parámetro (retorna usuario al endpoint):
+        @router.get("/endpoint")
+        async def endpoint(user=Depends(require_permission("GET", "/api/v1/endpoint"))):
+            ...
+
+    Args:
+        method: Método HTTP del endpoint (solo para documentación, se usa request.method)
+        path: Path del endpoint (solo para documentación, se usa request.url.path)
+    """
+    from fastapi import Request, HTTPException, status
+    from app.core.permissions import user_has_permission
+
+    async def _check_permission(request: Request, current_user=Depends(get_current_user)):
+        # Verificar si el usuario está activo (R4)
+        if not current_user.active:
+            from app.core.errors import ForbiddenError
+            raise ForbiddenError("Usuario inactivo")
+
+        # Usar SIEMPRE el method y path reales de la request
+        # Los argumentos method/path son solo para documentación
+        actual_method = request.method
+        actual_path = request.url.path
+
+        # Verificar permiso por rol
+        if not user_has_permission(current_user.role, actual_method, actual_path):
+            from app.core.errors import ForbiddenError
+            raise ForbiddenError("No tiene permisos para esta operacion")
+
+        return current_user
+
+    return _check_permission

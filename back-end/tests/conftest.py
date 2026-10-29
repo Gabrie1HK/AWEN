@@ -55,7 +55,7 @@ def client():
         dependencies.get_notification_service: lambda: notif_service,
         dependencies.get_parcel_service: lambda: ParcelService(parcel_repo, tracking_repo, notif_service),
         dependencies.get_logistics_service: lambda: LogisticsService(batch_repo, vehicle_repo, notif_service),
-        dependencies.get_report_service: lambda: ReportService(notif_service),
+        dependencies.get_report_service: lambda: ReportService(parcel_repo, delivery_repo, user_mgmt_repo, notif_service),
         dependencies.get_branch_service: lambda: BranchService(branch_repo),
         dependencies.get_user_management_service: lambda: UserManagementService(user_mgmt_repo),
         dependencies.get_delivery_service: lambda: DeliveryService(delivery_repo, notif_service),
@@ -133,20 +133,23 @@ def empty_client():
     app = create_app()
     notif_repo = InMemoryNotificationRepository()
     notif_service = NotificationService(notif_repo)
+    parcel_repo = InMemoryParcelRepository()
+    delivery_repo = InMemoryDeliveryRepository()
+    user_mgmt_repo = InMemoryUserManagementRepository()
 
     app.dependency_overrides.update({
         dependencies.get_auth_service: lambda: AuthService(InMemoryUserRepository()),
         dependencies.get_notification_service: lambda: notif_service,
         dependencies.get_parcel_service: lambda: ParcelService(
-            InMemoryParcelRepository(), InMemoryTrackingRepository(), notif_service
+            parcel_repo, InMemoryTrackingRepository(), notif_service
         ),
         dependencies.get_logistics_service: lambda: LogisticsService(
             InMemoryBatchRepository(), InMemoryVehicleRepository(), notif_service
         ),
-        dependencies.get_report_service: lambda: ReportService(notif_service),
+        dependencies.get_report_service: lambda: ReportService(parcel_repo, delivery_repo, user_mgmt_repo, notif_service),
         dependencies.get_branch_service: lambda: BranchService(InMemoryBranchRepository()),
         dependencies.get_user_management_service: lambda: UserManagementService(InMemoryUserManagementRepository()),
-        dependencies.get_delivery_service: lambda: DeliveryService(InMemoryDeliveryRepository(), notif_service),
+        dependencies.get_delivery_service: lambda: DeliveryService(delivery_repo, notif_service),
     })
 
     with TestClient(app) as c:
@@ -169,20 +172,23 @@ def empty_data_client():
     user_repo = InMemoryUserRepository(seed_users())
     notif_repo = InMemoryNotificationRepository()
     notif_service = NotificationService(notif_repo)
+    parcel_repo = InMemoryParcelRepository()
+    delivery_repo = InMemoryDeliveryRepository()
+    user_mgmt_repo = InMemoryUserManagementRepository()
 
     app.dependency_overrides.update({
         dependencies.get_auth_service: lambda: AuthService(user_repo),
         dependencies.get_notification_service: lambda: notif_service,
         dependencies.get_parcel_service: lambda: ParcelService(
-            InMemoryParcelRepository(), InMemoryTrackingRepository(), notif_service
+            parcel_repo, InMemoryTrackingRepository(), notif_service
         ),
         dependencies.get_logistics_service: lambda: LogisticsService(
             InMemoryBatchRepository(), InMemoryVehicleRepository(), notif_service
         ),
-        dependencies.get_report_service: lambda: ReportService(notif_service),
+        dependencies.get_report_service: lambda: ReportService(parcel_repo, delivery_repo, user_mgmt_repo, notif_service),
         dependencies.get_branch_service: lambda: BranchService(InMemoryBranchRepository()),
         dependencies.get_user_management_service: lambda: UserManagementService(InMemoryUserManagementRepository()),
-        dependencies.get_delivery_service: lambda: DeliveryService(InMemoryDeliveryRepository(), notif_service),
+        dependencies.get_delivery_service: lambda: DeliveryService(delivery_repo, notif_service),
     })
 
     with TestClient(app) as c:

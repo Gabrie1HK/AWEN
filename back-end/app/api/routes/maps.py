@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 
-from app.core.dependencies import get_parcel_service
+from app.core.dependencies import get_parcel_service, require_permission
 from app.schemas.tracking import RouteResponse
 from app.services.parcels import ParcelService
 
@@ -8,7 +8,7 @@ from app.services.parcels import ParcelService
 router = APIRouter(prefix="/maps", tags=["maps"])
 
 
-@router.get("/route", response_model=RouteResponse, summary="Calcular ruta entre dos puntos por calles")
+@router.get("/route", response_model=RouteResponse, summary="Calcular ruta entre dos puntos por calles", dependencies=[Depends(require_permission("GET", "/api/v1/maps/route"))])
 async def get_route(
     origin_lat: float = Query(..., description="Latitud del origen"),
     origin_lng: float = Query(..., description="Longitud del origen"),

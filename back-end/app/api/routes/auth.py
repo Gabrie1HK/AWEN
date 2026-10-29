@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 
-from app.core.dependencies import get_auth_service, get_current_user
+from app.core.dependencies import get_auth_service, require_permission
 from app.schemas.auth import LoginRequest, TokenResponse
-from app.schemas.user import UserPublic
+from app.schemas.user import UserPublic, UserInDB
 from app.services.auth import AuthService
 
 
@@ -15,7 +15,7 @@ async def login(payload: LoginRequest, service: AuthService = Depends(get_auth_s
     return await service.authenticate(payload.email, payload.password)
 
 
-@router.get("/me", response_model=UserPublic, summary="Obtener usuario actual")
-async def me(current_user=Depends(get_current_user)) -> UserPublic:
+@router.get("/me", response_model=UserPublic, summary="Obtener usuario actual", dependencies=[Depends(require_permission("GET", "/api/v1/auth/me"))])
+async def me(current_user: UserInDB = Depends(require_permission("GET", "/api/v1/auth/me"))) -> UserPublic:
     """Devuelve la informacion del usuario autenticado segun el token JWT."""
     return UserPublic(**current_user.model_dump(exclude={"hashed_password"}))

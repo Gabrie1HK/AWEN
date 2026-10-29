@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from app.core.config import get_settings
-from app.core.errors import UnauthorizedError
+from app.core.errors import UnauthorizedError, ForbiddenError
 from app.core.security import create_access_token, decode_token, verify_password
 from app.repositories.users import UserRepository
 from app.schemas.auth import TokenResponse
@@ -17,7 +17,7 @@ class AuthService:
         if not user or not verify_password(password, user.hashed_password):
             raise UnauthorizedError("Credenciales invalidas")
         if not user.active:
-            raise UnauthorizedError("Error usuario inactivo, contacte al administrador")
+            raise ForbiddenError("Usuario inactivo")
 
         settings = get_settings()
         access_token = create_access_token(
@@ -39,4 +39,6 @@ class AuthService:
         user = await self._repo.get_by_id(int(subject))
         if not user:
             raise UnauthorizedError("Usuario no encontrado")
+        if not user.active:
+            raise ForbiddenError("Usuario inactivo")
         return user

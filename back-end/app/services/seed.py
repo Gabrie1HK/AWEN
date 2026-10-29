@@ -57,4 +57,17 @@ def seed_users() -> list[UserInDB]:
             active=True,
             hashed_password=password_hash,
         ),
+        UserInDB(
+            id=7,
+            name="Marta",
+            last_name="Cliente",
+            ci="V-78901234",
+            email="marta@email.com",
+            role="Client",
+            branch=None,
+            phone="+58 414 321 0987",
+            address="Av. Bolivar 456, Merida",
+            active=False,
+            hashed_password=password_hash,
+        ),
     ]
