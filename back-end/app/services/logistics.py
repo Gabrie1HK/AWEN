@@ -62,6 +62,51 @@ class LogisticsService:
                 raise NotFoundError("Lote no encontrado")
         return batch
 
+    async def create_batch(self, payload: BatchCreate) -> BatchPublic:
+        batch_id = await self._next_batch_id()
+        status = payload.status or BatchStatus.PENDING
+        parcels = payload.parcels or []
+        batch = BatchPublic(
+            id=batch_id,
+            parcels=parcels,
+            status=status,
+            vehicle=payload.vehicle,
+            driver=payload.driver,
+            driverId=payload.driver_id,
+            parcelCount=len(parcels),
+        )
+        result = await self._batches.create(batch)
+        if self._notifications:
+            await self._notifications.create(
+                text=f"Lote {batch_id} creado con {len(parcels)} encomiendas",
+                action_type="batch_created",
+                related_id=batch_id,
+            )
+        return result
+
+    async def update_batch(self, batch_id: str, payload: BatchUpdate) -> BatchPublic:
+        updated = await self._batches.update(batch_id, payload)
+        if not updated:
+            raise NotFoundError("Lote no encontrado")
+        return updated
+
+    async def assign_batch(self, batch_id: str, payload: BatchAssign) -> BatchPublic:
+        update = BatchUpdate(
+            vehicle=payload.vehicle,
+            driver=payload.driver,
+            driver_id=payload.driver_id,
+            parcels=payload.parcels,
+            status=payload.status or BatchStatus.ASSIGNED,
+        )
+        result = await self.update_batch(batch_id, update)
+        if self._notifications:
+            await self._notifications.create(
+                text=f"Lote {batch_id} asignado a {payload.driver}",
+                action_type="batch_assigned",
+                related_id=batch_id,
+            )
+        return result
+
     async def list_vehicles(
         self,
         page: int | None = None,
