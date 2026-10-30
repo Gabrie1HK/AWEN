@@ -1,5 +1,1 @@
-import '@testing-library/jest-dom/vitest'
-
-beforeEach(() => {
-  localStorage.clear()
-})
+import '@testing-library/jest-dom'

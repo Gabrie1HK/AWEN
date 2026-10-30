@@ -23,7 +23,7 @@ describe('Login page', () => {
   })
 
   it('shows error on failed login', async () => {
-    const login = vi.fn().mockResolvedValue(null)
+    const login = vi.fn().mockRejectedValue(new Error('Credenciales invalidas'))
     renderLogin({ login })
     const inputs = screen.getAllByRole('textbox')
     fireEvent.change(inputs[0], { target: { value: 'bad@test.com' } })
@@ -31,7 +31,7 @@ describe('Login page', () => {
     fireEvent.change(passwords[0], { target: { value: 'wrong' } })
     fireEvent.click(screen.getByText(/Iniciar Sesión/))
     await waitFor(() => {
-      expect(screen.getByText(/Credenciales inválidas/)).toBeInTheDocument()
+      expect(screen.getByText('Credenciales invalidas')).toBeInTheDocument()
     })
   })
 
@@ -57,7 +57,20 @@ describe('Login page', () => {
     fireEvent.change(passwords[0], { target: { value: 'pwd' } })
     fireEvent.click(screen.getByText(/Iniciar Sesión/))
     await waitFor(() => {
-      expect(screen.getByText(/Error de conexión/)).toBeInTheDocument()
+      expect(screen.getByText('Network error')).toBeInTheDocument()
+    })
+  })
+
+  it('shows fallback message when error has no message', async () => {
+    const login = vi.fn().mockRejectedValue({})
+    renderLogin({ login })
+    const inputs = screen.getAllByRole('textbox')
+    fireEvent.change(inputs[0], { target: { value: 'x@y.com' } })
+    const passwords = document.querySelectorAll('input[type="password"]')
+    fireEvent.change(passwords[0], { target: { value: 'pwd' } })
+    fireEvent.click(screen.getByText(/Iniciar Sesión/))
+    await waitFor(() => {
+      expect(screen.getByText('Error de conexión con el servidor')).toBeInTheDocument()
     })
   })
 
@@ -66,9 +79,9 @@ describe('Login page', () => {
     expect(screen.getByText('Volver al inicio')).toBeInTheDocument()
   })
 
-  it('shows test credentials hint', () => {
+  it('shows forgot password contact message', () => {
     renderLogin()
-    expect(screen.getByText(/Credenciales de prueba/)).toBeInTheDocument()
-    expect(screen.getByText(/admin@awen.com \/ 123456/)).toBeInTheDocument()
+    fireEvent.click(screen.getByText('¿Olvidaste tu contraseña?'))
+    expect(screen.getByText(/soportetecnico@awen.com/)).toBeInTheDocument()
   })
 })

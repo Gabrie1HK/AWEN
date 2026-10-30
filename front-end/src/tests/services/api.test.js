@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { setAuthToken, getAuthToken, authApi, parcelsApi, branchesApi, usersApi, logisticsApi, deliveriesApi, dashboardApi, reportsApi, trackingApi, notificationsApi, requestForm } from '../../services/api'
+import { setAuthToken, getAuthToken, authApi, parcelsApi, branchesApi, usersApi, logisticsApi, deliveriesApi, dashboardApi, reportsApi, trackingApi, notificationsApi } from '../../services/api'
 
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+globalThis.fetch = mockFetch
 
 function mockJsonResponse(body, status = 200) {
   return Promise.resolve({
@@ -218,7 +218,7 @@ describe('requestForm', () => {
     mockFetch.mockResolvedValue(mockJsonResponse({ url: '/uploads/test.pdf' }))
     const fd = new FormData()
     fd.append('file', 'test')
-    const result = await deliveriesApi.uploadEvidence('DEL-001', fd.get('file'))
+    await deliveriesApi.uploadEvidence('DEL-001', fd.get('file'))
     expect(mockFetch.mock.calls[0][1].method).toBe('POST')
     expect(mockFetch.mock.calls[0][0]).toContain('/deliveries/DEL-001/upload')
   })

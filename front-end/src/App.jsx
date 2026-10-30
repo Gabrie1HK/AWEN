@@ -27,6 +27,8 @@ function ProtectedRoute({ children, path }) {
   return children
 }
 
+export { ProtectedRoute }
+
 function PublicTrackingRoute({ children }) {
   const { user } = useAuth()
   if (user && user.role !== 'Client') return <>{children}</>
