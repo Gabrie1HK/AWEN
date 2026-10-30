@@ -36,7 +36,7 @@ class InMemoryUserManagementRepository(UserManagementRepository):
         self._passwords: Dict[int, str] = {}
 
     async def list(self) -> List[UserPublic]:
-        return list(self._users.values())
+        return [u for u in self._users.values() if u.active]
 
     async def get(self, user_id: int) -> Optional[UserPublic]:
         return self._users.get(user_id)
@@ -60,7 +60,7 @@ class InMemoryUserManagementRepository(UserManagementRepository):
         existing = self._users.get(user_id)
         if not existing:
             return False
-        del self._users[user_id]
+        existing.active = False
         return True
 
     async def update_password(self, user_id: int, hashed_password: str) -> bool:
@@ -75,7 +75,7 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
         self._session = session
 
     async def list(self) -> List[UserPublic]:
-        result = await self._session.execute(select(UserManagement))
+        result = await self._session.execute(select(UserManagement).where(UserManagement.active == True))
         users = result.scalars().all()
         return [
             UserPublic(
@@ -86,10 +86,10 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
                 email=u.email,
                 role=u.role,
                 branch=u.branch,
-                phone=u.phone,
-                address=u.address,
-                active=u.active,
-                lastLogin=u.last_login,
+                phone=user.phone,
+                address=user.address,
+                active=user.active,
+                lastLogin=user.last_login,
             )
             for u in users
         ]
@@ -185,10 +185,10 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
         user = await self._session.get(UserManagement, user_id)
         if not user:
             return False
-        await self._session.delete(user)
+        user.active = False
         auth_user = await self._session.get(User, user_id)
         if auth_user:
-            await self._session.delete(auth_user)
+            auth_user.active = False
         await self._session.commit()
         return True
 
