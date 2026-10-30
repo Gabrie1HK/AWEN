@@ -31,7 +31,7 @@ class InMemoryBranchRepository(BranchRepository):
         self._branches: Dict[int, BranchPublic] = {b.id: b for b in branches}
 
     async def list(self) -> List[BranchPublic]:
-        return list(self._branches.values())
+        return [b for b in self._branches.values() if b.active]
 
     async def get(self, branch_id: int) -> Optional[BranchPublic]:
         return self._branches.get(branch_id)
@@ -55,7 +55,7 @@ class InMemoryBranchRepository(BranchRepository):
         existing = self._branches.get(branch_id)
         if not existing:
             return False
-        del self._branches[branch_id]
+        existing.active = False
         return True
 
 
@@ -64,7 +64,7 @@ class SqlAlchemyBranchRepository(BranchRepository):
         self._session = session
 
     async def list(self) -> List[BranchPublic]:
-        result = await self._session.execute(select(Branch))
+        result = await self._session.execute(select(Branch).where(Branch.active == True))
         items = result.scalars().all()
         return [
             BranchPublic(
@@ -128,6 +128,6 @@ class SqlAlchemyBranchRepository(BranchRepository):
         branch = await self._session.get(Branch, branch_id)
         if not branch:
             return False
-        await self._session.delete(branch)
+        branch.active = False
         await self._session.commit()
         return True

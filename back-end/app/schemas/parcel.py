@@ -18,6 +18,18 @@ class ParcelStatus(str, Enum):
     RETURNED = "Returned"
 
 
+# State machine: allowed transitions between parcel statuses
+ALLOWED_TRANSITIONS: dict[ParcelStatus, list[ParcelStatus]] = {
+    ParcelStatus.REGISTERED: [ParcelStatus.PICKED_UP],
+    ParcelStatus.PICKED_UP: [ParcelStatus.IN_TRANSIT, ParcelStatus.RETURNED],
+    ParcelStatus.IN_TRANSIT: [ParcelStatus.AT_DESTINATION_BRANCH, ParcelStatus.RETURNED],
+    ParcelStatus.AT_DESTINATION_BRANCH: [ParcelStatus.OUT_FOR_DELIVERY, ParcelStatus.RETURNED],
+    ParcelStatus.OUT_FOR_DELIVERY: [ParcelStatus.DELIVERED, ParcelStatus.RETURNED],
+    ParcelStatus.DELIVERED: [],  # Terminal state
+    ParcelStatus.RETURNED: [],  # Terminal state
+}
+
+
 class ParcelBase(AppBaseModel):
     sender: str = Field(..., min_length=1, max_length=120)
     sender_id: str = Field(..., min_length=1, max_length=40, alias="senderId")

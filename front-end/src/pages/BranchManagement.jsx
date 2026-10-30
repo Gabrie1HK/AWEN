@@ -57,14 +57,10 @@ export default function BranchManagement() {
       })
   }, [execute])
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchBranches(page, search)
-  }, [page, fetchBranches])
-
-  useEffect(() => {
-    setPage(1)
-    fetchBranches(1, search)
-  }, [search, fetchBranches])
+  }, [page, search, fetchBranches])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>

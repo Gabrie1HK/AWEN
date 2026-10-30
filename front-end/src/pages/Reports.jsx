@@ -5,7 +5,6 @@ import DataTable from '../components/ui/DataTable'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import ErrorBanner from '../components/ui/ErrorBanner'
 import { useApi } from '../hooks/useApi'
-import { PARCEL_STATUS_LABELS, translateStatus } from '../utils/statusTranslations'
 
 const STATUS_COLORS = {
   Registered: '#3b82f6',

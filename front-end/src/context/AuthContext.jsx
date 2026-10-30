@@ -19,18 +19,24 @@ function loadSession() {
         return savedUser
       }
     }
-  } catch {}
+  } catch {
+    // Intencional: session corrupta o inexistente
+  }
   return null
 }
 
 function saveSession(user, token) {
   try {
     localStorage.setItem('awen_session', JSON.stringify({ user, token: token || getAuthToken() }))
-  } catch {}
+  } catch {
+    // Intencional: almacenamiento lleno o inaccesible
+  }
 }
 
 function clearSession() {
-  try { localStorage.removeItem('awen_session') } catch {}
+  try { localStorage.removeItem('awen_session') } catch {
+    // Intencional: clave inexistente
+  }
 }
 
 export function AuthProvider({ children }) {
