@@ -57,11 +57,16 @@ El workflow `.github/workflows/ci.yml` falla en todos los runs desde antes de la
 - **Backend**: `ModuleNotFoundError: No module named 'boto3'` al cargar `tests/conftest.py`.
   La Fase 2 introdujo `boto3` en `app/services/storage.py`, pero no lo añadió a `requirements.txt`.
 - **Frontend**: `npm run lint` falla por los 18 errores de producción listados abajo.
-- **Backend (tras corregir boto3)**: quedan los 3 tests preexistentes de la Fase 1.
+- **Backend (tras corregir boto3)**: quedan 6 tests preexistentes:
+  - `test_delete_branch_soft` y `test_delete_user_soft`: esperan soft delete, la API hace hard delete.
+  - `test_update_status_skip_not_allowed`: la API acepta un salto de estado que deberia rechazar.
+  - `test_reports_activity`: el endpoint devuelve una lista vacia.
+  - `test_public_tracking_found` y `test_full_lifecycle`: intentan conectar a PostgreSQL local.
 
 Impacto: los PR #12 (Fase 3) y #13 (Fase 4) se mergearon con el CI en rojo; los tests y el build
-del frontend ni siquiera llegan a ejecutarse en CI. **Tratado en:** Fase 5 (lint y dependencias)
-y Fase 6 (CI obligatorio).
+del frontend ni siquiera llegan a ejecutarse en CI. Las regresiones de Fase 3 en logística y
+notificaciones POD se corrigieron en la rama `fix/logistica-regresion-fase-3`. **Tratado en:**
+Fase 5 (lint, dependencias y tests) y Fase 6 (CI obligatorio).
 
 ### 5. Lint global del frontend sigue en rojo (preexistente)
 

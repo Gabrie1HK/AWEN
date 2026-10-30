@@ -52,7 +52,12 @@ def get_logistics_service(
     db: AsyncSession = Depends(get_db),
     notifications: NotificationService = Depends(get_notification_service),
 ) -> LogisticsService:
-    return LogisticsService(SqlAlchemyBatchRepository(db), SqlAlchemyVehicleRepository(db), notifications)
+    return LogisticsService(
+        SqlAlchemyBatchRepository(db),
+        SqlAlchemyVehicleRepository(db),
+        SqlAlchemyUserRepository(db),
+        notifications,
+    )
 
 
 def get_report_service(

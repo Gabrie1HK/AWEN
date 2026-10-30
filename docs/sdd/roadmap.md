@@ -27,7 +27,7 @@ spec esté **aprobada**.
 
 > Fases 3 y 4 mergeadas en `develop` (PR #12 y PR #13). El CI del repositorio sigue en rojo por
 > deuda preexistente: dependencia `boto3` ausente en `requirements.txt`, 18 errores de lint de
-> producción y 3 tests de backend. El detalle está en `NOTAS.md` y se aborda en Fase 5/6.
+> producción y 6 tests de backend. El detalle está en `NOTAS.md` y se aborda en Fase 5/6.
 
 
 > Las fases 2 en adelante se añaden cuando exista una spec. No se planifican en el roadmap
