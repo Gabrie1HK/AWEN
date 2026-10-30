@@ -20,13 +20,14 @@ spec esté **aprobada**.
 | --- | --- | --- | --- | --- |
 | 1 | Seguridad y autorización | `cerrada` | [fase-1-seguridad](../specs/fase-1-seguridad.md) | `fix/fase-1-seguridad` |
 | 2 | Almacenamiento serverless | `cerrada` | [fase-2-storage-serverless](../specs/fase-2-storage.md) | `feat/fase-2-storage-serverless` |
-| 3 | Filtro por sucursal (branch scoping) | `en implementacion` | [fase-3-branch-scoping](../specs/fase-3-branch-scoping.md) | `feat/fase-3-branch-scoping` |
-| 4 | Testing Frontend - Cobertura crítica | `en implementacion` | [fase-4-testing-frontend](../specs/fase-4-testing-frontend.md) | `feat/fase-4-testing-frontend` |
-| 5 | Decisiones pendientes (Licencia, start_backend.bat) | — | — | — |
+| 3 | Filtro por sucursal (branch scoping) | `cerrada` | [fase-3-branch-scoping](../specs/fase-3-branch-scoping.md) | `feat/fase-3-branch-scoping` |
+| 4 | Testing Frontend - Cobertura crítica | `cerrada` | [fase-4-testing-frontend](../specs/fase-4-testing-frontend.md) | `feat/fase-4-testing-frontend` |
+| 5 | Limpieza de lint y decisiones pendientes | — | — | — |
 | 6 | Publicar develop + CI/CD | — | — | — |
 
-> Fases 3 y 4 tienen rama publicada y verificación local en verde, pero sus PR hacia `develop`
-> están pendientes porque `gh` no está autenticado en el entorno del agente.
+> Fases 3 y 4 mergeadas en `develop` (PR #12 y PR #13). El CI del repositorio sigue en rojo por
+> deuda preexistente: dependencia `boto3` ausente en `requirements.txt`, 18 errores de lint de
+> producción y 3 tests de backend. El detalle está en `NOTAS.md` y se aborda en Fase 5/6.
 
 
 > Las fases 2 en adelante se añaden cuando exista una spec. No se planifican en el roadmap
