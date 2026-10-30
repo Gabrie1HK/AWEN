@@ -31,6 +31,17 @@ vi.mock('react-leaflet', () => ({
   useMapEvents: () => {},
 }))
 
+beforeEach(() => {
+  vi.clearAllMocks()
+  // Default mock for list
+  api.list.mockResolvedValue(listResponse(parcels))
+  api.branchesList.mockResolvedValue(listResponse([
+    { id: 'SUC-001', name: 'Sucursal Central', city: 'Valencia', address: 'Av. Principal', manager: 'Juan', phone: '123', active: true },
+    { id: 'SUC-002', name: 'Sucursal Norte', city: 'Maracaibo', address: 'Calle 2', manager: 'Pedro', phone: '456', active: true },
+  ]))
+  api.getRoute.mockResolvedValue({ route: [], distance_km: 0 })
+})
+
 const parcels = [
   {
     id: 'ENV-001',
@@ -215,10 +226,16 @@ describe('ParcelManagement', () => {
     const user = userEvent.setup()
     render(<ParcelManagement />)
     await screen.findByText('AWEN-2026-0001')
+    let listCallCount = 0
+    api.list.mockImplementation(() => {
+      listCallCount++
+      if (listCallCount === 1) return Promise.resolve(listResponse(parcels))
+      return Promise.resolve(listResponse([parcels[1]]))
+    })
 
     await user.click(screen.getAllByTitle('Eliminar')[0])
 
-    const dialog = screen.getByText('Eliminar Encomienda').closest('.modal-content')
+    const dialog = await screen.findByText('Eliminar encomienda').then(el => el.closest('.modal-content'))
     expect(dialog).not.toBeNull()
     await user.click(within(dialog).getByRole('button', { name: 'Si, Eliminar' }))
 
@@ -248,7 +265,14 @@ describe('ParcelManagement', () => {
   })
 
   it('edita una encomienda existente', async () => {
-    api.update.mockResolvedValue({ ...parcels[0], sender: 'TechStore Editado' })
+    const updatedParcel = { ...parcels[0], sender: 'TechStore Editado' }
+    api.update.mockResolvedValue(updatedParcel)
+    let listCallCount = 0
+    api.list.mockImplementation(() => {
+      listCallCount++
+      if (listCallCount === 1) return Promise.resolve(listResponse(parcels))
+      return Promise.resolve(listResponse([updatedParcel, parcels[1]]))
+    })
     const user = userEvent.setup()
     render(<ParcelManagement />)
     await screen.findByText('AWEN-2026-0001')

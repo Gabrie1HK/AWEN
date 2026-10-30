@@ -32,6 +32,44 @@ from app.services.seed_deliveries import seed_deliveries
 from app.services.seed_logistics import seed_batches, seed_vehicles
 from app.services.seed_parcels import seed_parcels, seed_tracking_history
 from app.services.seed_users_management import seed_users_management
+from app.schemas.notification import NotificationSchema
+from datetime import datetime, timezone
+
+def seed_notifications() -> list:
+    """Seed sample notifications for reports activity."""
+    now = datetime.now(timezone.utc)
+    return [
+        NotificationSchema(
+            id=str(int(now.timestamp() * 1000)),
+            user_id=2,
+            text="Encomienda AWEN-2026-0001 creada",
+            action_type="parcel_created",
+            related_id="ENV-001",
+            time=now.strftime("%H:%M"),
+            created_at=now.isoformat(),
+            read=False,
+        ),
+        NotificationSchema(
+            id=str(int((now.timestamp() + 1) * 1000)),
+            user_id=4,
+            text="Entrega ENV-001 completada con POD",
+            action_type="delivery_completed",
+            related_id="DEL-001",
+            time=now.strftime("%H:%M"),
+            created_at=now.isoformat(),
+            read=False,
+        ),
+        NotificationSchema(
+            id=str(int((now.timestamp() + 2) * 1000)),
+            user_id=2,
+            text="Lote LOT-001 asignado a vehiculo ABC-123",
+            action_type="batch_assigned",
+            related_id="LOT-001",
+            time=now.strftime("%H:%M"),
+            created_at=now.isoformat(),
+            read=False,
+        ),
+    ]
 
 
 @pytest.fixture
@@ -47,7 +85,7 @@ def client():
     vehicle_repo = InMemoryVehicleRepository(seed_vehicles())
     delivery_repo = InMemoryDeliveryRepository(seed_deliveries())
     user_mgmt_repo = InMemoryUserManagementRepository(seed_users_management())
-    notif_repo = InMemoryNotificationRepository()
+    notif_repo = InMemoryNotificationRepository(seed_notifications())
     notif_service = NotificationService(notif_repo)
 
     app.dependency_overrides.update({

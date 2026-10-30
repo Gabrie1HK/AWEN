@@ -26,7 +26,6 @@ export default function DriverDashboard() {
   const [noteIsPublic, setNoteIsPublic] = useState(false)
   const [drvNotes, setDrvNotes] = useState([])
   const [msg, setMsg] = useState('')
-  const [deliveryPhoto, setDeliveryPhoto] = useState(null)
   const [deliveryPhotoUrl, setDeliveryPhotoUrl] = useState('')
   const [deliveryGps, setDeliveryGps] = useState('')
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
@@ -50,7 +49,6 @@ export default function DriverDashboard() {
     setMsg('')
     setDrvNotes([])
     setTracking([])
-    setDeliveryPhoto(null)
     setDeliveryPhotoUrl('')
     setDeliveryGps('')
     parcelsApi.tracking(p.guide)
@@ -64,7 +62,6 @@ export default function DriverDashboard() {
   const handleDeliveryPhotoChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setDeliveryPhoto(file)
     setUploadingPhoto(true)
     try {
       const result = await parcelsApi.uploadEvidence(file)
@@ -176,7 +173,7 @@ export default function DriverDashboard() {
             <div className="chart-card">
               <h4 style={{ marginBottom: 12 }}>Actualizar Estado</h4>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <select value={newStatus} onChange={e => { setNewStatus(e.target.value); if (e.target.value !== 'Delivered') { setDeliveryPhoto(null); setDeliveryPhotoUrl(''); setDeliveryGps('') } }} style={{ flex: 1, minWidth: 150 }}>
+                <select value={newStatus} onChange={e => { setNewStatus(e.target.value); if (e.target.value !== 'Delivered') { setDeliveryPhotoUrl(''); setDeliveryGps('') } }} style={{ flex: 1, minWidth: 150 }}>
                   <option value="">Seleccionar...</option>
                   {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>

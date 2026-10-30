@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { dashboardApi } from '../services/api'
 import StatCard from '../components/ui/StatCard'
 import DataTable from '../components/ui/DataTable'
@@ -20,7 +20,7 @@ export default function Dashboard() {
 
   const { loading, error, setError, execute } = useApi()
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     execute(() => dashboardApi.get())
       .then(data => {
         if (data) {
@@ -30,7 +30,11 @@ export default function Dashboard() {
           if (data.recentActivity) setActivity(data.recentActivity)
         }
       })
-  }, [])
+  }, [execute])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
       <div className="kpi-grid">

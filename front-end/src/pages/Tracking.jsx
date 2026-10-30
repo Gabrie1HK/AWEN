@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { trackingApi } from '../services/api'
@@ -42,7 +42,7 @@ export default function Tracking() {
     return history.filter(step => step.completed && step.lat && step.lng)
   }, [history])
 
-  useEffect(() => {
+  const updateMapState = useCallback((parcel, completedSteps, routePath) => {
     if (!parcel) {
       setMapState({ status: 'idle', marker: null, route: null, message: '' })
       return
@@ -58,7 +58,12 @@ export default function Tracking() {
       : completedSteps.map(step => ({ lat: Number(step.lat), lng: Number(step.lng) }))
     const lastStep = route[route.length - 1]
     setMapState({ status: 'ready', marker: lastStep, route, message: '' })
-  }, [completedSteps, parcel, routePath])
+  }, [])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    updateMapState(parcel, completedSteps, routePath)
+  }, [updateMapState, parcel, completedSteps, routePath])
 
   const handleTrack = () => {
     if (!guide.trim()) return

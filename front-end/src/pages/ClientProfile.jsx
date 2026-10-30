@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { parcelsApi, trackingApi, usersApi, mapsApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
@@ -74,11 +74,17 @@ export default function ClientProfile() {
     return () => { active = false }
   }, [])
 
-  useEffect(() => {
+  const fetchMyParcels = useCallback(() => {
     execute(() => parcelsApi.myParcels())
       .then(res => { if (res) setMyParcels(res.data || res) })
-  }, [])
+  }, [execute])
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchMyParcels()
+  }, [fetchMyParcels])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (destinationPoint) {
       setFormData(prev => ({
@@ -90,6 +96,7 @@ export default function ClientProfile() {
     }
   }, [destinationPoint])
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (originPoint && destinationPoint) {
       setLoadingRoute(true)
@@ -123,6 +130,7 @@ export default function ClientProfile() {
       .catch(() => {})
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!selectedGuide) return undefined
     const refresh = () => {
