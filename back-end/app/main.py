@@ -68,6 +68,37 @@ def create_app() -> FastAPI:
 
     application.include_router(api_router, prefix=settings.api_v1_prefix)
 
+    @application.get("/health", tags=["health"], summary="Health check del servicio")
+    async def health_check():
+        """
+        Health check endpoint para liveness/readiness probes.
+        Verifica conectividad a la base de datos.
+        """
+        from app.database.database import get_db
+        from sqlalchemy import text
+        from datetime import datetime, timezone
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        db_status = False
+        try:
+            async for db in get_db():
+                await db.execute(text("SELECT 1"))
+                db_status = True
+                break
+        except Exception:
+            db_status = False
+
+        status = "ok" if db_status else "degraded"
+        return {
+            "status": "ok" if db_status else "degraded",
+            "checks": {
+                "db": db_status
+            },
+            "version": settings.version,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
     return application
 
 

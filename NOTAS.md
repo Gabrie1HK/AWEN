@@ -9,6 +9,7 @@ convertirse en una spec o en una decisión cuando le toque.
 - **Fase 2** (Almacenamiento serverless): cerrada y mergeada en `develop` (PR #11).
 - **Fase 3** (Branch scoping): cerrada y mergeada en `develop` (PR #12).
 - **Fase 4** (Testing Frontend): cerrada y mergeada en `develop` (PR #13).
+- **Fase 5** (Limpieza de lint y decisiones pendientes): cerrada y mergeada en `develop` (PR #16).
 
 ## Fase 1 — Seguridad y autorización (COMPLETADA)
 

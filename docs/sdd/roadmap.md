@@ -22,8 +22,8 @@ spec esté **aprobada**.
 | 2 | Almacenamiento serverless | `cerrada` | [fase-2-storage-serverless](../specs/fase-2-storage.md) | `feat/fase-2-storage-serverless` |
 | 3 | Filtro por sucursal (branch scoping) | `cerrada` | [fase-3-branch-scoping](../specs/fase-3-branch-scoping.md) | `feat/fase-3-branch-scoping` |
 | 4 | Testing Frontend - Cobertura crítica | `cerrada` | [fase-4-testing-frontend](../specs/fase-4-testing-frontend.md) | `feat/fase-4-testing-frontend` |
-| 5 | Limpieza de lint y decisiones pendientes | — | — | — |
-| 6 | Publicar develop + CI/CD | — | — | — |
+| 5 | Limpieza de lint y decisiones pendientes | `cerrada` | [fase-5-limpieza-deuda-tecnica](../specs/fase-5-limpieza-deuda.md) | `feat/fase-5-limpieza-deuda-tecnica` |
+| 6 | CI/CD, Branch Protection y Despliegue | `en implementacion` | [fase-6-ci-cd-deploy](../specs/fase-6-ci-cd-deploy.md) | `feat/fase-6-ci-cd-deploy-impl` |
 
 > Fases 3 y 4 mergeadas en `develop` (PR #12 y PR #13). El CI del repositorio sigue en rojo por
 > deuda preexistente: dependencia `boto3` ausente en `requirements.txt`, 18 errores de lint de
