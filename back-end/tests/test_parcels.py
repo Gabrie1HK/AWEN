@@ -154,7 +154,7 @@ class TestParcelStatus:
             json={"status": "Delivered"},
         )
         assert response.status_code == 422
-        assert "no se puede saltar" in response.json()["detail"]["message"].lower()
+        assert "transicion de estado no permitida" in response.json()["detail"]["message"].lower()
 
     def test_update_status_rollback_not_allowed(self, client, auth_headers):
         response = client.post(
@@ -163,7 +163,7 @@ class TestParcelStatus:
             json={"status": "Registered"},
         )
         assert response.status_code == 422
-        assert "retroceder" in response.json()["detail"]["message"].lower()
+        assert "transicion de estado no permitida" in response.json()["detail"]["message"].lower()
 
     def test_update_status_from_delivered_blocked(self, client, auth_headers):
         response = client.post(

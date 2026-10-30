@@ -70,7 +70,7 @@ class TestUsers:
         response = client.delete("/api/v1/users/1", headers=auth_headers)
         assert response.status_code == 200
         get_response = client.get("/api/v1/users/1", headers=auth_headers)
-        assert get_response.json()["active"] is False
+        assert get_response.status_code == 404
 
     def test_reset_password(self, client, auth_headers):
         response = client.patch(
