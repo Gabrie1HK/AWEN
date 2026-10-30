@@ -7,8 +7,8 @@ convertirse en una spec o en una decisión cuando le toque.
 
 - **Fase 1** (Seguridad y autorización): cerrada y mergeada en `develop` (PR #9).
 - **Fase 2** (Almacenamiento serverless): cerrada y mergeada en `develop` (PR #11).
-- **Fase 3** (Branch scoping): implementada en `feat/fase-3-branch-scoping`; PR pendiente de crear.
-- **Fase 4** (Testing Frontend): tests implementados en `feat/fase-4-testing-frontend`; PR pendiente de crear.
+- **Fase 3** (Branch scoping): cerrada y mergeada en `develop` (PR #12).
+- **Fase 4** (Testing Frontend): cerrada y mergeada en `develop` (PR #13).
 
 ## Fase 1 — Seguridad y autorización (COMPLETADA)
 
@@ -46,13 +46,22 @@ convertirse en una spec o en una decisión cuando le toque.
 ### 3. Protección de la rama `develop`
 
 - `develop` ya existe en el remoto, pero falta configurar branch protection y CI obligatorio.
-
-### 4. `gh` CLI sin autenticar
-
-- No se pueden crear Pull Requests desde el agente. Los PR de Fase 3 y Fase 4 deben abrirse
-  manualmente desde GitHub.
+- Mientras siga sin protección se pueden mergear PRs con el CI en rojo, como ocurrió con #12 y #13.
 
 ## Hallazgos técnicos
+
+### 4. CI del repositorio en rojo (bloqueante)
+
+El workflow `.github/workflows/ci.yml` falla en todos los runs desde antes de la Fase 3:
+
+- **Backend**: `ModuleNotFoundError: No module named 'boto3'` al cargar `tests/conftest.py`.
+  La Fase 2 introdujo `boto3` en `app/services/storage.py`, pero no lo añadió a `requirements.txt`.
+- **Frontend**: `npm run lint` falla por los 18 errores de producción listados abajo.
+- **Backend (tras corregir boto3)**: quedan los 3 tests preexistentes de la Fase 1.
+
+Impacto: los PR #12 (Fase 3) y #13 (Fase 4) se mergearon con el CI en rojo; los tests y el build
+del frontend ni siquiera llegan a ejecutarse en CI. **Tratado en:** Fase 5 (lint y dependencias)
+y Fase 6 (CI obligatorio).
 
 ### 5. Lint global del frontend sigue en rojo (preexistente)
 

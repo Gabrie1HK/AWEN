@@ -205,7 +205,7 @@ Los tests usarán los endpoints ya definidos en `api.js`:
 
 ## 14. Resultado de la implementación
 
-Fecha de cierre local: 2026-10-30.
+Fecha de cierre local: 2026-10-30. Integrada en `develop` mediante PR #13.
 
 - **Suite**: 20 archivos, 165 tests, todos en verde.
 - **Cobertura** (`npm run test:coverage`):
