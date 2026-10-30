@@ -1,0 +1,51 @@
+AWEN - Sistema de Gestión de Encomiendas
+Copyright (c) 2026 Gabriel Espinoza
+
+Este software se distribuye bajo la licencia MIT (ver LICENSE).
+
+NOTICE - Proyecto Educativo
+---------------------------
+
+AWEN es un proyecto educativo desarrollado como parte del aprendizaje de:
+- Arquitectura de software (FastAPI + React)
+- Patrones de diseño (Repository, Service, Dependency Injection)
+- Testing (pytest, Vitest, MSW)
+- CI/CD (GitHub Actions, Docker)
+- Despliegue serverless (Vercel)
+
+Este proyecto NO está destinado para uso comercial en producción sin revisión
+adicional de seguridad, escalabilidad y cumplimiento normativo.
+
+Autor: Gabriel Espinoza
+Fecha: 2026
+Repositorio: https://github.com/Gabrie1HK/AWEN
+
+--- 
+
+Componentes de terceros (licencias compatibles):
+
+Backend:
+- FastAPI (MIT)
+- SQLAlchemy (MIT)
+- Pydantic (MIT)
+- PostgreSQL/psycopg (PostgreSQL License)
+- pytest (MIT)
+- python-jose (MIT)
+- bcrypt (Apache-2.0)
+- httpx (BSD-3-Clause)
+- Nominatim/OpenStreetMap (ODbL)
+- OSRM (BSD-2-Clause)
+
+Frontend:
+- React (MIT)
+- Vite (MIT)
+- Vitest (MIT)
+- React Router (MIT)
+- Leaflet (BSD-2-Clause)
+- React Leaflet (MIT)
+- ESLint (MIT)
+- @testing-library/react (MIT)
+- MSW (MIT)
+
+Todas las licencias de terceros son compatibles con MIT y permiten uso,
+modificación y distribución.
