@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { logisticsApi, parcelsApi } from '../services/api'
 import StatusBadge from '../components/ui/StatusBadge'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
@@ -21,18 +21,18 @@ export default function Logistics() {
   const allParcels = parcelList.filter(p => p.status === 'Registered' || p.status === 'At Destination Branch')
   const { loading, error, setError, execute } = useApi()
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  function loadData() {
+  const loadData = useCallback(() => {
     execute(() => logisticsApi.listBatches())
       .then(res => { if (res) setBatches(res.data || res) })
     execute(() => logisticsApi.listVehicles())
       .then(res => { if (res) setVehicleList(res.data || res) })
     execute(() => parcelsApi.list({ pageSize: 100 }))
       .then(res => { if (res) setParcelList(res.data || res) })
-  }
+  }, [execute])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const toggleParcel = (id) => {
     setSelectedParcels(prev =>

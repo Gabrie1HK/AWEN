@@ -71,19 +71,16 @@ export default function UserManagement() {
       })
   }, [execute])
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchUsers(page, search, roleFilter)
-  }, [page, fetchUsers])
+  }, [page, search, roleFilter, fetchUsers])
 
-  useEffect(() => {
-    setPage(1)
-    fetchUsers(1, search, roleFilter)
-  }, [search, roleFilter, fetchUsers])
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     execute(() => branchesApi.list({ pageSize: 50 }))
       .then(res => { if (res) setBranchList(res.data || res) })
-  }, [])
+  }, [execute])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
