@@ -19,11 +19,15 @@ spec esté **aprobada**.
 | Fase | Nombre | Estado | Spec | Rama |
 | --- | --- | --- | --- | --- |
 | 1 | Seguridad y autorización | `cerrada` | [fase-1-seguridad](../specs/fase-1-seguridad.md) | `fix/fase-1-seguridad` |
-| 2 | Almacenamiento serverless | `aprobada` | [fase-2-storage-serverless](../specs/fase-2-storage.md) | `feat/fase-2-storage-serverless` |
-| 3 | Filtro por sucursal (branch scoping) | `cerrada` | [fase-3-branch-scoping](../specs/fase-3-branch-scoping.md) | `feat/fase-3-branch-scoping` |
-| 4 | Testing Frontend - Cobertura crítica | `borrador` | — | — |
+| 2 | Almacenamiento serverless | `cerrada` | [fase-2-storage-serverless](../specs/fase-2-storage.md) | `feat/fase-2-storage-serverless` |
+| 3 | Filtro por sucursal (branch scoping) | `en implementacion` | [fase-3-branch-scoping](../specs/fase-3-branch-scoping.md) | `feat/fase-3-branch-scoping` |
+| 4 | Testing Frontend - Cobertura crítica | `en implementacion` | [fase-4-testing-frontend](../specs/fase-4-testing-frontend.md) | `feat/fase-4-testing-frontend` |
 | 5 | Decisiones pendientes (Licencia, start_backend.bat) | — | — | — |
 | 6 | Publicar develop + CI/CD | — | — | — |
+
+> Fases 3 y 4 tienen rama publicada y verificación local en verde, pero sus PR hacia `develop`
+> están pendientes porque `gh` no está autenticado en el entorno del agente.
+
 
 > Las fases 2 en adelante se añaden cuando exista una spec. No se planifican en el roadmap
 > sin spec: el roadmap solo refleja trabajo real.
