@@ -187,21 +187,40 @@ Los tests usarán los endpoints ya definidos en `api.js`:
 
 ## 12. Preguntas abiertas
 
-- [ ] **Framework de testing**: ¿Seguir con `vitest` + `@testing-library/react` + `msw`? (Sí, stack actual)
-- [ ] **Mocking de API**: ¿Handlers de `msw` centralizados en `src/tests/mocks/handlers.js`? (Sí)
-- [ ] **Datos de prueba**: ¿Usar factories/fixtures centralizados en `src/tests/fixtures/`? (Sí)
-- [ ] **Cobertura de ramas**: ¿50% branches es suficiente o subir a 70%? (50% inicial)
-- [ ] **Tests de snapshot**: ¿Incluir para componentes UI? (Opcional, bajo prioridad)
-- [ ] **CI/CD**: ¿Ejecutar tests en PR obligatorio? (Sí, parte de Definition of Done)
+- [x] **Framework de testing**: `vitest` + `@testing-library/react` + `msw`. Resuelto: se mantiene el stack.
+- [x] **Mocking de API**: handlers de `msw` centralizados en `src/tests/mocks/handlers.js`. Resuelto: MSW se usa en el test de integración de `Dashboard`; el resto mockea módulos o `fetch` con Vitest para evitar que MSW intercepte esos dobles.
+- [x] **Datos de prueba**: fixtures centralizados en `src/tests/fixtures/`. Resuelto: se reutilizan usuarios en tests de contexto y páginas.
+- [x] **Cobertura de ramas**: 50% branches como umbral inicial. Resuelto: configurado en `vitest.config.js`; la cobertura real de páginas supera el 60%.
+- [x] **Tests de snapshot**: no se incluyen. Resuelto: prioridad baja, se posponen.
+- [x] **CI/CD**: ejecutar tests en PR obligatorio. Resuelto: forma parte de la Definition of Done.
 
 ## 13. Plan de verificación manual
 
-1. `npm test -- --coverage` → verificar umbrales ≥70% statements páginas críticas
-2. `npm test src/tests/pages/ParcelManagement.test.jsx` → todos pasan
-3. `npm test src/tests/hooks/useApi.test.js` → todos pasan
-4. `npm test src/tests/context/AuthContext.test.jsx` → todos pasan
-5. `npm test src/tests/routing/ProtectedRoutes.test.jsx` → todos pasan
-6. Verificar reporte de cobertura HTML en `coverage/index.html`
+1. `npm run test:coverage` → verificar umbrales ≥70% statements en páginas críticas.
+2. `npm test src/tests/pages/ParcelManagement.test.jsx` → todos pasan.
+3. `npm test src/tests/hooks/useApi.test.js` → todos pasan.
+4. `npm test src/tests/context/AuthContext.test.jsx` → todos pasan.
+5. `npm test src/tests/routing/ProtectedRoute.test.jsx` → todos pasan.
+6. Verificar reporte de cobertura HTML en `coverage/index.html`.
+
+## 14. Resultado de la implementación
+
+Fecha de cierre local: 2026-10-30.
+
+- **Suite**: 20 archivos, 165 tests, todos en verde.
+- **Cobertura** (`npm run test:coverage`):
+  - Global: 75.55% statements, 61.98% branches, 78.9% lines.
+  - Páginas críticas: 72.18% statements, 60.77% branches, 75.6% lines.
+  - Hooks: 100% statements/lines/functions.
+  - Contexto: 100% statements/lines/functions.
+- **MSW**: integración real en `Dashboard.test.jsx` con `src/tests/mocks/setup.js` y los handlers
+  centralizados. No se activa globalmente porque interfiere con los tests que sustituyen `fetch`.
+- **R12**: `src/tests/routing/ProtectedRoute.test.jsx` cubre redirección a login, acceso permitido y
+  redirección al dashboard por rol.
+- **R14**: umbrales configurados en `vitest.config.js` y script `test:coverage` en `package.json`.
+- **Lint**: `npx eslint src/tests` pasa; `npm run lint` sigue fallando por deuda preexistente en
+  páginas de producción, registrada en `NOTAS.md` para Fase 5.
+
 
 ---
 
