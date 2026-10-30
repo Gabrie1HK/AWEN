@@ -1,7 +1,7 @@
 ---
 fase: 6
 nombre: ci-cd-deploy
-estado: borrador
+estado: aprobada
 rama: feat/fase-6-ci-cd-deploy
 autor:
 fecha: 2026-10-30
