@@ -10,6 +10,7 @@ from botocore.config import Config as BotoConfig
 from botocore.exceptions import ClientError
 
 from app.core.config import get_settings
+from app.services.supabase_storage import SupabaseStorageService
 
 
 class StorageService:
@@ -253,3 +254,25 @@ class StorageService:
             if e.response["Error"]["Code"] == "404":
                 return None
             raise
+
+
+def get_storage_service() -> StorageService | SupabaseStorageService:
+    """
+    Factory para obtener el servicio de almacenamiento según configuración.
+    
+    Returns:
+        StorageService: Para S3-compatible (Vercel Blob, AWS S3, R2, MinIO)
+        SupabaseStorageService: Para Supabase Storage
+    """
+    settings = get_settings()
+    
+    # Si hay credenciales de Supabase Storage, usarlo
+    if settings.supabase_service_role_key and settings.supabase_url:
+        return SupabaseStorageService(
+            bucket=settings.supabase_storage_bucket,
+            supabase_url=settings.supabase_url,
+            service_role_key=settings.supabase_service_role_key,
+        )
+    
+    # Fallback a S3-compatible (Vercel Blob, AWS S3, R2, MinIO)
+    return StorageService()

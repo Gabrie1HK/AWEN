@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: awen-postgres
+    environment:
+      POSTGRES_USER: awen
+      POSTGRES_PASSWORD: awen
+      POSTGRES_DB: awen
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U awen"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./back-end
+      dockerfile: Dockerfile.dev
+    container_name: awen-backend
+    environment:
+      AWEN_SECRET_KEY: dev-secret-key-change-in-production-min-32-chars-long
+      AWEN_DATABASE_URL: postgresql+psycopg://awen:awen@postgres:5432/awen
+      AWEN_CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
+      AWEN_UPLOAD_DIR: ./uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./back-end:/app
+      - uploads:/app/uploads
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile.dev
+    container_name: awen-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./front-end:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+
+volumes:
+  postgres_data:
+  uploads:

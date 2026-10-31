@@ -437,21 +437,24 @@ export default function ParcelManagement() {
         </div>
       )}
 
-      {deleteTarget && (
-        <ConfirmModal
-          title="Eliminar encomienda"
-          message={`Esta seguro de eliminar ${deleteTarget.guide}?`}
-          onConfirm={() => {
-            parcelsApi.cancel(deleteTarget.id)
-              .then(() => {
-                setDeleteTarget(null)
-                fetchParcels(page, search, statusFilter)
-              })
-              .catch(() => setError('No se pudo eliminar la encomienda'))
-          }}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Eliminar encomienda"
+        message={`Esta seguro de eliminar ${deleteTarget?.guide}?`}
+        confirmLabel="Si, Eliminar"
+        onConfirm={() => {
+          const target = deleteTarget
+          if (!target) return
+          parcelsApi.remove(target.id)
+            .then(() => {
+              setParcelList(prev => prev.filter(p => p.id !== target.id))
+              setTotalParcels(t => Math.max(0, t - 1))
+              setDeleteTarget(null)
+            })
+            .catch(() => setError('No se pudo eliminar la encomienda'))
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   </>
   )

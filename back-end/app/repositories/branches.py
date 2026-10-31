@@ -34,7 +34,8 @@ class InMemoryBranchRepository(BranchRepository):
         return [b for b in self._branches.values() if b.active]
 
     async def get(self, branch_id: int) -> Optional[BranchPublic]:
-        return self._branches.get(branch_id)
+        branch = self._branches.get(branch_id)
+        return branch if branch and branch.active else None
 
     async def create(self, branch: BranchPublic) -> BranchPublic:
         self._branches[branch.id] = branch
@@ -81,7 +82,7 @@ class SqlAlchemyBranchRepository(BranchRepository):
 
     async def get(self, branch_id: int) -> Optional[BranchPublic]:
         branch = await self._session.get(Branch, branch_id)
-        if not branch:
+        if not branch or not branch.active:
             return None
         return BranchPublic(
             id=branch.id,

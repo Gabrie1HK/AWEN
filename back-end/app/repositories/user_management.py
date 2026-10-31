@@ -39,7 +39,8 @@ class InMemoryUserManagementRepository(UserManagementRepository):
         return [u for u in self._users.values() if u.active]
 
     async def get(self, user_id: int) -> Optional[UserPublic]:
-        return self._users.get(user_id)
+        user = self._users.get(user_id)
+        return user if user and user.active else None
 
     async def create(self, user: UserPublic) -> UserPublic:
         self._users[user.id] = user
@@ -96,7 +97,7 @@ class SqlAlchemyUserManagementRepository(UserManagementRepository):
 
     async def get(self, user_id: int) -> Optional[UserPublic]:
         user = await self._session.get(UserManagement, user_id)
-        if not user:
+        if not user or not user.active:
             return None
         return UserPublic(
             id=user.id,
