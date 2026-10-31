@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 
 class TestParcelList:
     def test_list_parcels_requires_auth(self, client):
@@ -213,6 +215,7 @@ class TestParcelStatus:
 
 
 class TestPublicTracking:
+    @pytest.mark.integration
     def test_public_tracking_found(self, client):
         response = client.get("/api/v1/tracking/AWEN-2026-0001")
         assert response.status_code == 200
