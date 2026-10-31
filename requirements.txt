@@ -13,6 +13,7 @@ bcrypt==4.3.0
 alembic==1.13.2
 boto3==1.43.121
 botocore==1.43.121
+moto==5.2.5
 psycopg[binary]==3.2.9
 greenlet==3.1.1
 sqlalchemy==2.0.36
