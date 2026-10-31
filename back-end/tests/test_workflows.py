@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import pytest
+
 
 class TestParcelLifecycle:
+    @pytest.mark.integration
     def test_full_lifecycle(self, client, auth_headers):
         payload = {
             "sender": "Lifecycle Test",
