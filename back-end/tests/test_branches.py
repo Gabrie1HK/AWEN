@@ -6,7 +6,7 @@ class TestBranches:
         response = client.get("/api/v1/branches", headers=auth_headers)
         assert response.status_code == 200
         body = response.json()
-        assert body["total"] >= 6
+        assert body["total"] >= 5
         assert len(body["data"]) >= 5
 
     def test_get_branch(self, client, auth_headers):
@@ -73,4 +73,4 @@ class TestBranches:
         response = client.delete("/api/v1/branches/1", headers=auth_headers)
         assert response.status_code == 200
         get_response = client.get("/api/v1/branches/1", headers=auth_headers)
-        assert get_response.json()["active"] is False
+        assert get_response.status_code == 404

@@ -55,10 +55,12 @@ class InMemoryBatchRepository(BatchRepository):
         if not existing:
             return None
         data = existing.model_dump(by_alias=True)
-        for key, value in update.model_dump(by_alias=True, exclude_unset=True).items():
-            data[key] = value
-        if "parcels" in data:
-            data["parcelCount"] = len(data.get("parcels") or [])
+        changes = update.model_dump(by_alias=True, exclude_unset=True)
+        parcels = changes.pop("parcels", None)
+        data.update(changes)
+        if parcels is not None:
+            data["parcels"] = parcels
+            data["parcelCount"] = len(parcels)
         updated = BatchPublic(**data)
         self._batches[batch_id] = updated
         return updated

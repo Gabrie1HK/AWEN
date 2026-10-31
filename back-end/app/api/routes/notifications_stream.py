@@ -18,7 +18,7 @@ async def _get_user_from_token(
     service: AuthService = Depends(get_auth_service),
 ):
     if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        raise HTTPException(status_code=401, detail="No autenticado")
     return await service.get_current_user(token)
 
 

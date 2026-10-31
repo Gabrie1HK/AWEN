@@ -56,6 +56,19 @@ const parcelsColumns = (onView, onEdit, onDelete) => [
 ]
 
 const PAGE_SIZE = 10
+
+// Component that always calls useMapEvents at top level
+function MapEventHandler({ mapComponents, onMapClick }) {
+  // Always call the hook at top level - provide dummy if not available
+  const useMapEvents = mapComponents?.useMapEvents ?? (() => {})
+  useMapEvents({
+    click: (event) => {
+      if (mapComponents?.useMapEvents && onMapClick) onMapClick(event)
+    },
+  })
+  return null
+}
+
 export default function ParcelManagement() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -105,28 +118,12 @@ export default function ParcelManagement() {
       })
   }, [execute])
 
-  useEffect(() => {
-    fetchParcels(page, search, statusFilter)
-  }, [page, fetchParcels])
-
-  useEffect(() => {
-    setPage(1)
-    fetchParcels(1, search, statusFilter)
-  }, [search, statusFilter, fetchParcels])
-
-  useEffect(() => {
+  const fetchBranches = useCallback(() => {
     execute(() => branchesApi.list({ pageSize: 50 }))
       .then(res => { if (res) setBranchList(res.data || res) })
-  }, [])
+  }, [execute])
 
-  useEffect(() => {
-    if (destinationPoint) {
-      const el = formRef.current?.elements?.recipientAddress
-      if (el) el.value = `${destinationPoint.lat.toFixed(5)}, ${destinationPoint.lng.toFixed(5)}`
-    }
-  }, [destinationPoint])
-
-  useEffect(() => {
+  const fetchRoute = useCallback(() => {
     if (originPoint && destinationPoint) {
       setLoadingRoute(true)
       mapsApi.getRoute(originPoint.lat, originPoint.lng, destinationPoint.lat, destinationPoint.lng)
@@ -138,6 +135,27 @@ export default function ParcelManagement() {
     }
   }, [originPoint, destinationPoint])
 
+  useEffect(() => {
+    fetchParcels(page, search, statusFilter)
+  }, [page, fetchParcels])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setPage(1)
+    fetchParcels(1, search, statusFilter)
+  }, [search, statusFilter, fetchParcels])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchBranches()
+  }, [fetchBranches])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchRoute()
+  }, [fetchRoute])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (selectedParcel && showForm) {
       if (selectedParcel.originLat && selectedParcel.originLng) {
@@ -156,26 +174,21 @@ export default function ParcelManagement() {
     }
   }, [selectedParcel, showForm])
 
-  const MapClickHandler = () => {
-    if (!mapComponents?.useMapEvents) return null
-    const { useMapEvents } = mapComponents
-    useMapEvents({
-      click: (event) => {
-        const coords = { lat: event.latlng.lat, lng: event.latlng.lng }
-        if (mapStep === 'origin') {
-          setOriginPoint(coords)
-          setMapStep('destination')
-        } else {
-          setDestinationPoint(coords)
-        }
-      },
-    })
-    return null
-  }
+  const handleMapClick = useCallback((event) => {
+    const coords = { lat: event.latlng.lat, lng: event.latlng.lng }
+    if (mapStep === 'origin') {
+      setOriginPoint(coords)
+      setMapStep('destination')
+    } else {
+      setDestinationPoint(coords)
+    }
+  }, [mapStep, setOriginPoint, setDestinationPoint, setMapStep])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
+    <>
+      <MapEventHandler mapComponents={mapComponents} onMapClick={handleMapClick} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
         <SearchBar
           search={search} onSearchChange={setSearch}
           filters={[{ key: 'status', value: statusFilter, placeholder: 'Filtrar por estado', options: statusOptions }]}
@@ -345,7 +358,6 @@ export default function ParcelManagement() {
                       attribution='&copy; OpenStreetMap contributors'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    <MapClickHandler />
                     {originPoint && (
                       <mapComponents.Marker position={[originPoint.lat, originPoint.lng]} />
                     )}
@@ -397,19 +409,25 @@ export default function ParcelManagement() {
                 }
                 if (selectedParcel) {
                   parcelsApi.update(selectedParcel.id, data)
-                    .then(r => { 
-                      setParcelList(prev => prev.map(p => p.id === selectedParcel.id ? r : p)) 
-                      setShowForm(false); setSelectedParcel(null); setOriginPoint(null); setDestinationPoint(null); setMapStep('origin')
+                    .then(() => {
+                      setShowForm(false)
+                      setSelectedParcel(null)
+                      setOriginPoint(null)
+                      setDestinationPoint(null)
+                      setMapStep('origin')
+                      fetchParcels(page, search, statusFilter)
                     })
-                    .catch(err => setError(err.message || 'No se pudo actualizar la encomienda'))
+                    .catch((err) => setError(err?.message || 'No se pudo actualizar'))
                 } else {
                   parcelsApi.create(data)
-                    .then(r => {
-                      setParcelList(prev => [r, ...prev.slice(0, PAGE_SIZE - 1)])
-                      setTotalParcels(t => t + 1)
-                      setShowForm(false); setSelectedParcel(null); setOriginPoint(null); setDestinationPoint(null); setMapStep('origin')
+                    .then(() => {
+                      setShowForm(false)
+                      setOriginPoint(null)
+                      setDestinationPoint(null)
+                      setMapStep('origin')
+                      fetchParcels(page, search, statusFilter)
                     })
-                    .catch(err => setError(err.message || 'No se pudo crear la encomienda'))
+                    .catch((err) => setError(err?.message || 'No se pudo crear'))
                 }
               }}>
                 {selectedParcel ? 'Guardar Cambios' : 'Crear Encomienda'}
@@ -421,18 +439,23 @@ export default function ParcelManagement() {
 
       <ConfirmModal
         open={!!deleteTarget}
-        title="Eliminar Encomienda"
-        message={`Estas seguro de eliminar la encomienda ${deleteTarget?.guide}? Esta accion no se puede deshacer.`}
+        title="Eliminar encomienda"
+        message={`Esta seguro de eliminar ${deleteTarget?.guide}?`}
         confirmLabel="Si, Eliminar"
         onConfirm={() => {
           const target = deleteTarget
+          if (!target) return
           parcelsApi.remove(target.id)
-            .then(() => { setParcelList(prev => prev.filter(p => p.id !== target.id)); setTotalParcels(t => t - 1) })
+            .then(() => {
+              setParcelList(prev => prev.filter(p => p.id !== target.id))
+              setTotalParcels(t => Math.max(0, t - 1))
+              setDeleteTarget(null)
+            })
             .catch(() => setError('No se pudo eliminar la encomienda'))
-          setDeleteTarget(null)
         }}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>
+  </>
   )
 }

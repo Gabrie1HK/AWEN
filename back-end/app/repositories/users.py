@@ -24,9 +24,16 @@ class InMemoryUserRepository(UserRepository):
     def __init__(self, users: List[UserInDB]) -> None:
         self._users: Dict[int, UserInDB] = {u.id: u for u in users}
         self._by_email: Dict[str, int] = {u.email.lower(): u.id for u in users}
+        self._by_name: Dict[str, int] = {u.name.lower(): u.id for u in users}
 
     async def get_by_email(self, email: str) -> Optional[UserInDB]:
         user_id = self._by_email.get(email.lower())
+        if user_id is None:
+            return None
+        return self._users.get(user_id)
+
+    async def get_by_name(self, name: str) -> Optional[UserInDB]:
+        user_id = self._by_name.get(name.lower())
         if user_id is None:
             return None
         return self._users.get(user_id)
@@ -57,6 +64,26 @@ class SqlAlchemyUserRepository(UserRepository):
 
     async def get_by_email(self, email: str) -> Optional[UserInDB]:
         result = await self._session.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
+        return UserInDB(
+            id=user.id,
+            name=user.name,
+            last_name=user.last_name,
+            ci=user.ci,
+            email=user.email,
+            role=user.role,
+            branch=user.branch,
+            phone=user.phone,
+            address=user.address,
+            active=user.active,
+            hashed_password=user.hashed_password,
+            client_number=user.client_number,
+        )
+
+    async def get_by_name(self, name: str) -> Optional[UserInDB]:
+        result = await self._session.execute(select(User).where(User.name == name))
         user = result.scalar_one_or_none()
         if not user:
             return None

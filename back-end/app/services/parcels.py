@@ -21,6 +21,7 @@ from app.schemas.parcel import (
     ParcelStatus,
     ParcelStatusUpdate,
     ParcelUpdate,
+    ALLOWED_TRANSITIONS,
 )
 from app.schemas.parcel_note import ParcelNoteCreate, ParcelNotePublic
 from app.schemas.tracking import TrackingEvent
@@ -44,8 +45,16 @@ class ParcelService:
         destination_branch: Optional[str] = None,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
+        user_branch: Optional[str] = None,
+        user_role: Optional[str] = None,
     ) -> Dict[str, Any]:
         items = await self._parcels.list()
+        # Filtrado por branch del usuario (branch scoping - Fase 3)
+        if user_branch and user_role != "Admin":
+            items = [
+                p for p in items
+                if p.origin_branch == user_branch or p.destination_branch == user_branch
+            ]
         if search:
             lowered = search.lower()
             items = [
@@ -70,10 +79,14 @@ class ParcelService:
             if full_name in p.sender.lower() or full_name in p.recipient.lower()
         ]
 
-    async def get(self, parcel_id: str) -> ParcelPublic:
+    async def get(self, parcel_id: str, user_branch: Optional[str] = None, user_role: Optional[str] = None) -> ParcelPublic:
         parcel = await self._parcels.get(parcel_id)
         if not parcel:
             raise NotFoundError("Encomienda no encontrada")
+        # Branch scoping: verificar ownership para roles no-Admin
+        if user_branch and user_role != "Admin":
+            if parcel.origin_branch != user_branch and parcel.destination_branch != user_branch:
+                raise NotFoundError("Encomienda no encontrada")
         return parcel
 
     async def get_by_guide(self, guide: str) -> ParcelPublic:
@@ -498,37 +511,22 @@ class ParcelService:
         if current == new:
             return
 
-        ordered = [
-            ParcelStatus.REGISTERED,
-            ParcelStatus.PICKED_UP,
-            ParcelStatus.IN_TRANSIT,
-            ParcelStatus.AT_DESTINATION_BRANCH,
-            ParcelStatus.OUT_FOR_DELIVERY,
-            ParcelStatus.DELIVERED,
-        ]
+        allowed = ALLOWED_TRANSITIONS.get(current, [])
 
-        terminal = {ParcelStatus.DELIVERED, ParcelStatus.RETURNED}
-
-        if current in terminal:
+        # Terminal states cannot transition to anything
+        if not allowed and current in {ParcelStatus.DELIVERED, ParcelStatus.RETURNED}:
             raise ValidationError(
                 f"No se puede cambiar el estado de {current.value}: es un estado terminal",
                 detail={"current": current.value, "new": new.value},
             )
 
+        # RETURNED is allowed from any state (special case)
         if new == ParcelStatus.RETURNED:
             return
 
-        if current not in ordered or new not in ordered:
+        # Check if transition is allowed
+        if new not in allowed:
             raise ValidationError(
-                f"Transicion invalida de {current.value} a {new.value}",
-                detail={"current": current.value, "new": new.value},
-            )
-
-        current_idx = ordered.index(current)
-        new_idx = ordered.index(new)
-
-        if new_idx <= current_idx:
-            raise ValidationError(
-                f"No se puede retroceder de {current.value} a {new.value}",
-                detail={"current": current.value, "new": new.value},
+                f"Transicion de estado no permitida de {current.value} a {new.value}",
+                detail={"current": current.value, "new": new.value, "allowed": [s.value for s in allowed]},
             )

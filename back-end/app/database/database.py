@@ -14,7 +14,9 @@ class Base(DeclarativeBase):
 
 def _build_engine():
     settings = get_settings()
-    return create_async_engine(settings.database_url, echo=settings.debug, future=True)
+    # Usa la URL efectiva (PostgreSQL con pooler de Supabase si está disponible)
+    db_url = settings.effective_database_url
+    return create_async_engine(db_url, echo=settings.debug, future=True)
 
 
 engine = _build_engine()

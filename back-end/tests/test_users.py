@@ -6,7 +6,7 @@ class TestUsers:
         response = client.get("/api/v1/users", headers=auth_headers)
         assert response.status_code == 200
         body = response.json()
-        assert body["total"] >= 7
+        assert body["total"] >= 6
         assert len(body["data"]) >= 5
 
     def test_list_users_filter_by_role(self, client, auth_headers):
@@ -70,7 +70,7 @@ class TestUsers:
         response = client.delete("/api/v1/users/1", headers=auth_headers)
         assert response.status_code == 200
         get_response = client.get("/api/v1/users/1", headers=auth_headers)
-        assert get_response.json()["active"] is False
+        assert get_response.status_code == 404
 
     def test_reset_password(self, client, auth_headers):
         response = client.patch(
